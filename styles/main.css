@@ -28,6 +28,8 @@
   --board-light: #e9edf5;
   --board-dark: #7d8fb5;
   --board-frame: #0d1424;
+  --coord-on-light: #46577a;
+  --coord-on-dark: #f7f9fd;
 
   /* Taşlar */
   --piece-white: #f8fafc;
@@ -67,6 +69,8 @@
   --board-light: #fbfcfe;
   --board-dark: #9db0d4;
   --board-frame: #cfd8e8;
+  --coord-on-light: #7b8db0;
+  --coord-on-dark: #ffffff;
   --piece-white: #ffffff;
   --piece-white-2: #e8edf6;
   --piece-black: #3b4a63;
@@ -261,8 +265,9 @@ select { cursor: pointer; }
 .board-svg .sq { transition: fill var(--dur); }
 
 .board-svg .coord { font-size: 14px; font-weight: 700; font-family: var(--font); opacity: .72; pointer-events: none; }
-.board-svg .coord.on-light { fill: var(--board-dark); }
-.board-svg .coord.on-dark { fill: var(--board-light); }
+.board-svg .coord.on-light { fill: var(--coord-on-light); }
+.board-svg .coord.on-dark { fill: var(--coord-on-dark); }
+.board-svg text { text-rendering: geometricPrecision; }
 
 /* Taşlar */
 .board-svg .piece { pointer-events: none; }

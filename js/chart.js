@@ -3,7 +3,8 @@
 // işaretleri, imleç + hover ipucu, tıklayarak o hamleye gitme.
 
 const PAD = { left: 36, right: 14, top: 14, bottom: 26 };
-const W = 620, H = 230;
+let W = 620;
+const H = 230;
 const SVGNS = 'http://www.w3.org/2000/svg';
 
 const PHASE_LABEL = { opening: 'Açılış', middlegame: 'Orta oyun', endgame: 'Son oyun' };
@@ -58,6 +59,11 @@ export class EvalChart {
 
     this.el.appendChild(wrap);
     this.wrap = wrap;
+    this._syncWidth();
+    if (typeof ResizeObserver !== 'undefined') {
+      this._ro = new ResizeObserver(() => { this._syncWidth(); this.render(); });
+      this._ro.observe(wrap);
+    }
 
     svg.addEventListener('pointermove', (e) => this._hover(e));
     svg.addEventListener('pointerleave', () => { this.tip.hidden = true; });
@@ -65,6 +71,14 @@ export class EvalChart {
       const i = this._indexFromEvent(e);
       if (i !== null) this.onSelect(i);
     });
+  }
+
+  /* Gerçek piksel genişliğine göre viewBox ayarla: metinler hiç bozulmasın */
+  _syncWidth() {
+    const rect = this.wrap.getBoundingClientRect();
+    const w = Math.round(rect.width);
+    if (w > 0 && Math.abs(w - W) > 2) { W = Math.max(320, w); this.svg.setAttribute('viewBox', `0 0 ${W} ${H}`); }
+    else this.svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   }
 
   setData(moves) {
@@ -114,6 +128,7 @@ export class EvalChart {
 
   render() {
     const svg = this.svg;
+    this._syncWidth();
     // defs koru
     while (svg.childNodes.length > 1) svg.removeChild(svg.lastChild);
 
