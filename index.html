@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Vezir — tarayıcıda çalışan ücretsiz satranç oyun analizi. Hamle sınıflandırma, doğruluk oranı, değerlendirme grafiği ve yerel AI koç notları. API anahtarı gerekmez." />
+  <meta name="theme-color" content="#0b1020" />
+  <title>Vezir — Satranç Oyun Analizi</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%E2%99%9E%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles/main.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">♞</span>
+        <div>
+          <h1>Vezir</h1>
+          <span class="tagline">tarayıcıda satranç analizi</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="engine-chip">
+          <span class="status-dot" id="engineDot"></span>
+          <span id="engineStatus">Motor yükleniyor…</span>
+        </div>
+        <button class="icon-btn" id="themeBtn" title="Tema değiştir" aria-label="Tema değiştir">☀</button>
+      </div>
+    </header>
+
+    <!-- ============ GİRİŞ EKRANI ============ -->
+    <section id="importView">
+      <div class="hero">
+        <h2>Oyununu analiz et, <em>hatalarını gör</em>, geliş.</h2>
+        <p>Analiz motoru tarayıcında çalışır: sunucu yok, API anahtarı yok, kayıt yok.
+           PGN yapıştır, sürükle-bırak yap ya da chess.com / lichess hesabından çek.</p>
+      </div>
+
+      <div class="import-grid">
+        <div class="card">
+          <h3>PGN yapıştır</h3>
+          <textarea id="pgnInput" placeholder='[Event "Günlük Oyun"]
+[White "ben"]
+[Black "rakip"]
+
+1. e4 e5 2. Nf3 Nc6 ...'></textarea>
+          <div class="btn-row">
+            <button class="btn primary" id="loadPgnBtn">Analiz et</button>
+            <button class="btn ghost" id="clearPgnBtn">Temizle</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Dosyadan yükle</h3>
+          <div class="dropzone" id="dropZone">
+            <strong>.pgn</strong> dosyasını buraya bırak<br />veya tıklayarak seç
+          </div>
+          <input type="file" id="fileInput" accept=".pgn,.txt" hidden />
+          <div class="hint">Dosya içindeki ilk oyun okunur.</div>
+        </div>
+
+        <div class="card">
+          <h3>Örnek oyunlar</h3>
+          <div class="remote-list" id="sampleList"></div>
+          <div class="hint">Tarihin ünlü oyunları — analizi hemen dene.</div>
+        </div>
+
+        <div class="card">
+          <h3>chess.com / lichess</h3>
+          <input type="text" id="ccUser" placeholder="chess.com kullanıcı adı" />
+          <button class="btn ghost" id="ccFetchBtn">chess.com'dan son oyunlar</button>
+          <input type="text" id="liUser" placeholder="lichess kullanıcı adı" />
+          <button class="btn ghost" id="liFetchBtn">lichess'ten son oyunlar</button>
+          <div class="remote-list" id="remoteList"></div>
+          <div class="hint">Yalnızca herkese açık arşivler (çevrimiçi iken).</div>
+        </div>
+      </div>
+
+      <section class="how">
+        <h3>Nasıl çalışır?</h3>
+        <div class="how-grid">
+          <div class="how-card">
+            <div class="how-num">1</div>
+            <h4>Ekle</h4>
+            <p>PGN yapıştır, dosya bırak ya da chess.com / lichess kullanıcı adını gir.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-num">2</div>
+            <h4>Analiz</h4>
+            <p>Vezir motoru (alfa-beta + quiescence) her hamleyi değerlendirir: en iyi hamle, değerlendirme, kazanma kaybı.</p>
+          </div>
+          <div class="how-card">
+            <div class="how-num">3</div>
+            <h4>Öğren</h4>
+            <p>Hamleler "vahim hata / hata / şüpheli" olarak sınıflanır, doğruluk oranı ve koç notları üretilir.</p>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ============ ANALİZ EKRANI ============ -->
+    <section id="reviewView" hidden>
+      <div class="review-grid">
+        <!-- Sol: tahta -->
+        <div class="board-col">
+          <div class="players">
+            <div class="player-row">
+              <span class="p-dot b"></span>
+              <span class="p-name" id="blackName">Siyah</span>
+              <span class="p-rating" id="blackRating"></span>
+              <span class="p-acc" id="blackAcc"></span>
+            </div>
+            <div class="player-row">
+              <span class="p-dot w"></span>
+              <span class="p-name" id="whiteName">Beyaz</span>
+              <span class="p-rating" id="whiteRating"></span>
+              <span class="p-acc" id="whiteAcc"></span>
+            </div>
+          </div>
+
+          <div class="board-shell">
+            <div id="board"></div>
+          </div>
+
+          <div class="eval-bar-wrap">
+            <div class="eval-bar"><div class="eval-fill" id="evalFill"></div></div>
+            <span class="eval-label" id="evalLabel">0.00</span>
+          </div>
+
+          <div class="controls">
+            <button class="ctrl-btn" id="startBtn" title="Başa dön (Home)">⏮</button>
+            <button class="ctrl-btn" id="prevBtn" title="Önceki hamle (←)">◀</button>
+            <button class="ctrl-btn" id="playBtn" title="Oynat / duraklat (Boşluk)">▶</button>
+            <button class="ctrl-btn" id="nextBtn" title="Sonraki hamle (→)">▶</button>
+            <button class="ctrl-btn" id="endBtn" title="Sona git (End)">⏭</button>
+            <button class="ctrl-btn" id="flipBtn" title="Tahtayı çevir (F)">⇅</button>
+            <select id="speedSelect" title="Oynatma hızı">
+              <option value="1600">Yavaş</option>
+              <option value="900" selected>Normal</option>
+              <option value="450">Hızlı</option>
+            </select>
+            <button class="ctrl-btn" id="engineMoveBtn" title="Motor hamlesini oyna">🤖</button>
+            <button class="ctrl-btn" id="resetExploreBtn" title="Keşif modundan çık (Esc)">↺</button>
+          </div>
+          <div class="explore-badge" id="exploreBadge" hidden></div>
+        </div>
+
+        <!-- Sağ: analiz -->
+        <div class="side-col">
+          <div class="panel">
+            <div class="panel-head">
+              <div class="tabs" role="tablist">
+                <button class="tab-button active" data-tab="moves" role="tab" aria-selected="true">Hamleler</button>
+                <button class="tab-button" data-tab="chart" role="tab" aria-selected="false">Grafik</button>
+                <button class="tab-button" data-tab="coach" role="tab" aria-selected="false">Koç notları</button>
+                <button class="tab-button" data-tab="ai" role="tab" aria-selected="false">AI Koç <span class="beta-badge">beta</span></button>
+              </div>
+              <span class="meta" id="moveCountLabel">0 hamle</span>
+            </div>
+
+            <div class="tab-pane" data-pane="moves">
+              <div class="move-list" id="moveList"></div>
+            </div>
+
+            <div class="tab-pane" data-pane="chart" hidden>
+              <div id="chart"></div>
+            </div>
+
+            <div class="tab-pane" data-pane="coach" hidden>
+              <div id="coachPane"><div class="empty-hint">Oyunu analiz ettiğinizde koç notları burada görünecek.</div></div>
+            </div>
+
+            <div class="tab-pane" data-pane="ai" hidden>
+              <div class="ai-setup" id="aiSetup">
+                <p class="ai-intro">
+                  Yapay zeka koç, motorun bulgularını <strong>Gemini</strong> ile yorumlar.
+                  Anahtar sunucuda güvende durur; tarayıcınız yalnızca kendi
+                  <em>Cloudflare Worker</em> adresinizi bilir.
+                </p>
+                <ol class="ai-steps">
+                  <li><code>worker/</code> klasöründeki kodu Cloudflare'a deploy edin:
+                    <pre>cd worker
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler deploy</pre></li>
+                  <li>Çıkan adresi (örn. <code>https://vezir-ai-coach.&lt;adiniz&gt;.workers.dev</code>) aşağıya yapıştırın ve kaydedin.</li>
+                </ol>
+                <div class="ai-url-row">
+                  <input type="text" id="aiWorkerUrl" placeholder="https://vezir-ai-coach.kullanici.workers.dev" />
+                  <button class="btn primary" id="aiSaveUrlBtn">Kaydet</button>
+                  <button class="btn ghost" id="aiTestUrlBtn">Bağlantıyı test et</button>
+                </div>
+                <div class="ai-status" id="aiStatus"></div>
+              </div>
+
+              <div class="ai-run" id="aiRun" hidden>
+                <div class="ai-url-row">
+                  <button class="btn accent" id="aiGenerateBtn">✨ AI koç yorumu üret</button>
+                  <button class="btn ghost" id="aiCancelBtn" hidden>İptal</button>
+                  <span class="ai-hint" id="aiCostHint"></span>
+                </div>
+                <div class="ai-progress" id="aiProgress" hidden><div class="progress-track"><div class="progress-bar" id="aiProgressBar"></div></div><span class="progress-text" id="aiProgressText">Yapay zeka düşünüyor…</span></div>
+                <div id="aiOutput"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Seçili hamle</h3>
+              <span class="meta" id="moveLabel">Başlangıç</span>
+            </div>
+            <div class="tab-pane">
+              <div class="move-card" id="moveCard">
+                <div class="card-empty">Bir hamle seçin veya tüm oyunu analiz edin.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h3>Analiz</h3>
+              <span class="meta"><span id="resultLabel"></span> · <span id="openingLabel"></span></span>
+            </div>
+            <div class="tab-pane" style="display:flex;flex-direction:column;gap:10px">
+              <div class="btn-row">
+                <button class="btn primary" id="analyzeBtn">Tüm oyunu analiz et</button>
+                <button class="btn ghost" id="abortBtn" hidden>Durdur</button>
+                <select id="depthSelect" title="Hamle başına düşünme süresi">
+                  <option value="150">Hızlı (150 ms)</option>
+                  <option value="400" selected>Normal (400 ms)</option>
+                  <option value="900">Derin (900 ms)</option>
+                </select>
+              </div>
+              <div class="progress-wrap" id="progressWrap" hidden>
+                <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+                <span class="progress-text" id="progressText">Hazırlanıyor…</span>
+              </div>
+              <div id="summaryPane"></div>
+              <div class="btn-row">
+                <button class="btn ghost" id="exportPgnBtn">PGN indir</button>
+                <button class="btn ghost" id="exportReportBtn">Raporu indir (.md)</button>
+                <button class="btn ghost" id="newGameBtn">Yeni oyun</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="app-footer">
+      <p>Vezir · tamamen tarayıcıda çalışan satranç analizi · motor: Vezir Engine (negamax + quiescence + transposition tablosu)</p>
+      <p class="credit">Bu proje (satranç motoru, arayüz ve testler) <strong>Arena.ai Agent Mode</strong> kullanılarak geliştirilmiştir.</p>
+      <p class="legal">chess.com ve lichess verileri ilgili kamu API'leri üzerinden kullanılır; bu hizmetlerle bağlantısı değildir. Analiz cihazınızda yapılır, hiçbir veri gönderilmez.</p>
+    </footer>
+  </div>
+
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

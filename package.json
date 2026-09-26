@@ -1,0 +1,17 @@
+{
+  "name": "vezir",
+  "version": "1.0.0",
+  "description": "Tarayicida calisan satranc oyun analizi",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "test": "node test/chess.test.mjs && node test/engine.test.mjs && node test/pgn.test.mjs && node test/analysis.test.mjs && node test/coach.test.mjs && node test/ai-coach.test.mjs && node test/ui.test.mjs && node test/matpst.test.mjs",
+    "build": "rm -rf dist && mkdir -p dist && cp -r index.html styles js worker README.md dist/ && cp _headers.template dist/_headers",
+    "deploy": "npm run build && cd dist && npx wrangler pages deploy . --project-name vezir --commit-dirty=true",
+    "setup-domain": "node scripts/setup-domain.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

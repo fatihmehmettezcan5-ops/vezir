@@ -1,0 +1,14 @@
+# Vezir AI Koç — Cloudflare Worker yapılandırması
+# Deploy:  npx wrangler deploy     (anahtar: npx wrangler secret put GEMINI_API_KEY)
+
+name = "vezir-ai-coach"
+main = "ai-coach-worker.js"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Kullanılacak model (gemini-2.5-* Eylül 2026'dan beri yeni kullanıcılara kapalı)
+GEMINI_MODEL = "gemini-3.8-flash"
+# IP başına günlük istek limiti — Gemini kotanızı korur
+RATE_LIMIT = "40"
+# Yalnızca kendi siteleriniz worker'ı çağırabilir (virgülle ayrılmış origin listesi)
+ALLOWED_ORIGINS = "https://*.vezir.pages.dev,http://localhost:8080,http://127.0.0.1:8080"
