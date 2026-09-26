@@ -11,4 +11,4 @@ GEMINI_MODEL = "gemini-3.8-flash"
 # IP başına günlük istek limiti — Gemini kotanızı korur
 RATE_LIMIT = "40"
 # Yalnızca kendi siteleriniz worker'ı çağırabilir (virgülle ayrılmış origin listesi)
-ALLOWED_ORIGINS = "https://*.vezir.pages.dev,http://localhost:8080,http://127.0.0.1:8080"
+ALLOWED_ORIGINS = "https://*.vezir.pages.dev,https://fatihmehmettezcan5-ops.github.io,http://localhost:8080,http://127.0.0.1:8080"

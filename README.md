@@ -201,8 +201,15 @@ Proje şu anda yayında:
 
 | Ne | Adres |
 |---|---|
-| **Uygulama** | https://vezir.pages.dev |
+| **Uygulama (Türkiye'den açılır)** | **https://fatihmehmettezcan5-ops.github.io/vezir/** |
+| Uygulama (Cloudflare Pages) | https://vezir.pages.dev |
 | **AI Koç worker** | https://vezir-ai-coach.fatihmehmettezcan5.workers.dev |
+| Kaynak kod | https://github.com/fatihmehmettezcan5-ops/vezir |
+
+> **Türkiye notu:** `pages.dev` domaini Türkiye'den erişime kapalı olduğu için site
+> ayrıca GitHub Pages üzerinden de yayınlanmıştır (`github.io` engelli değildir).
+> İki adres de aynı kodu servis eder; AI Koç worker'ı her iki origin'den de
+> çağrılabilir (`ALLOWED_ORIGINS` listesine ikisi de eklenmiştir).
 
 ### Komutlarla yeniden yayınlama
 
