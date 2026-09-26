@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Vezir — tarayıcıda çalışan ücretsiz satranç oyun analizi. Hamle sınıflandırma, doğruluk oranı, değerlendirme grafiği ve yerel AI koç notları. API anahtarı gerekmez." />
-  <meta name="theme-color" content="#0b1020" />
+  <meta name="theme-color" content="#0e1116" />
   <title>Vezir — Satranç Oyun Analizi</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='80' font-size='80'%3E%E2%99%9E%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M9 26.5h14M10.6 23.4c-.9-3.2.4-6 2.6-8.3 1.2-1.3 1.6-2.4 1.4-3.9-1.9.5-3.3 1.7-4.2 3.4-1-1.5-1.4-3.3-1.1-5.3 1.9 1 3.4 2.4 4.4 4.2.9-2.4 2.6-4.2 5-5.3-.6 2.6-.2 4.7 1.2 6.6 1.6 2.1 2.4 4.4 2.1 6.9z' fill='none' stroke='%2314b8a6' stroke-width='2.2' stroke-linejoin='round'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="styles/main.css" />
 </head>
 <body>
   <div id="app">
     <header class="topbar">
       <div class="brand">
-        <span class="logo" aria-hidden="true">♞</span>
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M9 26.5h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M10.6 23.4c-.9-3.2.4-6 2.6-8.3 1.2-1.3 1.6-2.4 1.4-3.9-1.9.5-3.3 1.7-4.2 3.4-1-1.5-1.4-3.3-1.1-5.3 1.9 1 3.4 2.4 4.4 4.2.9-2.4 2.6-4.2 5-5.3-.6 2.6-.2 4.7 1.2 6.6 1.6 2.1 2.4 4.4 2.1 6.9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="19.6" cy="12.4" r="1.15" fill="currentColor"/></svg>
         <div>
           <h1>Vezir</h1>
           <span class="tagline">tarayıcıda satranç analizi</span>
@@ -24,78 +24,62 @@
           <span class="status-dot" id="engineDot"></span>
           <span id="engineStatus">Motor yükleniyor…</span>
         </div>
-        <button class="icon-btn" id="themeBtn" title="Tema değiştir" aria-label="Tema değiştir">☀</button>
+        <button class="icon-btn" id="themeBtn" title="Tema değiştir" aria-label="Tema değiştir"><span id="themeIcon"></span></button>
       </div>
     </header>
 
     <!-- ============ GİRİŞ EKRANI ============ -->
     <section id="importView">
-      <div class="hero">
-        <h2>Oyununu analiz et, <em>hatalarını gör</em>, geliş.</h2>
+      <div class="import-head">
+        <h2>Oyununu analiz et, hatalarını gör, geliş.</h2>
         <p>Analiz motoru tarayıcında çalışır: sunucu yok, API anahtarı yok, kayıt yok.
-           PGN yapıştır, sürükle-bırak yap ya da chess.com / lichess hesabından çek.</p>
+           PGN yapıştır, dosya bırak ya da chess.com / lichess kullanıcı adından çek.</p>
       </div>
 
-      <div class="import-grid">
-        <div class="card">
-          <h3>PGN yapıştır</h3>
-          <textarea id="pgnInput" placeholder='[Event "Günlük Oyun"]
+      <form class="paste-panel" id="pgnForm">
+        <label for="pgnInput">PGN metni</label>
+        <textarea id="pgnInput" placeholder='[Event "Günlük Oyun"]
 [White "ben"]
 [Black "rakip"]
 
 1. e4 e5 2. Nf3 Nc6 ...'></textarea>
-          <div class="btn-row">
-            <button class="btn primary" id="loadPgnBtn">Analiz et</button>
-            <button class="btn ghost" id="clearPgnBtn">Temizle</button>
-          </div>
+        <div class="paste-actions">
+          <button class="btn primary" type="button" id="loadPgnBtn">Analiz et</button>
+          <button class="btn ghost" type="button" id="clearPgnBtn">Temizle</button>
+          <span class="paste-hint">Bir dosyada birden fazla oyun varsa ilki okunur.</span>
         </div>
+      </form>
 
-        <div class="card">
-          <h3>Dosyadan yükle</h3>
-          <div class="dropzone" id="dropZone">
-            <strong>.pgn</strong> dosyasını buraya bırak<br />veya tıklayarak seç
-          </div>
-          <input type="file" id="fileInput" accept=".pgn,.txt" hidden />
-          <div class="hint">Dosya içindeki ilk oyun okunur.</div>
-        </div>
-
-        <div class="card">
-          <h3>Örnek oyunlar</h3>
-          <div class="remote-list" id="sampleList"></div>
-          <div class="hint">Tarihin ünlü oyunları — analizi hemen dene.</div>
-        </div>
-
-        <div class="card">
-          <h3>chess.com / lichess</h3>
-          <input type="text" id="ccUser" placeholder="chess.com kullanıcı adı" />
-          <button class="btn ghost" id="ccFetchBtn">chess.com'dan son oyunlar</button>
-          <input type="text" id="liUser" placeholder="lichess kullanıcı adı" />
-          <button class="btn ghost" id="liFetchBtn">lichess'ten son oyunlar</button>
-          <div class="remote-list" id="remoteList"></div>
-          <div class="hint">Yalnızca herkese açık arşivler (çevrimiçi iken).</div>
-        </div>
+      <div class="import-alt">
+        <span class="alt-label">Ya da</span>
+        <button class="btn ghost" id="pickFileBtn"><span class="btn-icon" data-icon="upload"></span>Dosya seç</button>
+        <button class="btn ghost" id="ccToggleBtn"><span class="btn-icon" data-icon="link"></span>chess.com</button>
+        <button class="btn ghost" id="liToggleBtn"><span class="btn-icon" data-icon="link"></span>lichess</button>
+        <span class="alt-label" style="margin-left:6px">Örnek oyun</span>
+        <div class="samples" id="sampleList"></div>
+        <input type="file" id="fileInput" accept=".pgn,.txt" hidden />
       </div>
 
-      <section class="how">
-        <h3>Nasıl çalışır?</h3>
-        <div class="how-grid">
-          <div class="how-card">
-            <div class="how-num">1</div>
-            <h4>Ekle</h4>
-            <p>PGN yapıştır, dosya bırak ya da chess.com / lichess kullanıcı adını gir.</p>
-          </div>
-          <div class="how-card">
-            <div class="how-num">2</div>
-            <h4>Analiz</h4>
-            <p>Vezir motoru (alfa-beta + quiescence) her hamleyi değerlendirir: en iyi hamle, değerlendirme, kazanma kaybı.</p>
-          </div>
-          <div class="how-card">
-            <div class="how-num">3</div>
-            <h4>Öğren</h4>
-            <p>Hamleler "vahim hata / hata / şüpheli" olarak sınıflanır, doğruluk oranı ve koç notları üretilir.</p>
-          </div>
+      <div id="remoteBox" hidden>
+        <div class="ai-url-row" style="margin-top:10px;max-width:760px">
+          <input type="text" id="ccUser" placeholder="chess.com kullanıcı adı" />
+          <button class="btn ghost" id="ccFetchBtn">Son oyunları getir</button>
         </div>
-      </section>
+        <div class="ai-url-row" style="margin-top:8px;max-width:760px">
+          <input type="text" id="liUser" placeholder="lichess kullanıcı adı" />
+          <button class="btn ghost" id="liFetchBtn">Son oyunları getir</button>
+        </div>
+        <div class="remote-list" id="remoteList"></div>
+        <div class="hint">Yalnızca herkese açık arşivler okunur (çevrimiçi iken).</div>
+      </div>
+
+      <div class="dropzone" id="dropZone" hidden>
+        <strong>.pgn</strong> dosyasını buraya bırak
+      </div>
+
+      <p class="import-flow">
+        <b>PGN yapıştır</b><span class="flow-arrow">→</span><b>motoru çalıştır</b><span class="flow-arrow">→</span><b>hamle hamle incele</b>
+      </p>
     </section>
 
     <!-- ============ ANALİZ EKRANI ============ -->
@@ -110,11 +94,8 @@
               <span class="gh-rating" id="whiteRating"></span>
             </div>
             <div class="gh-acc">
-              <svg viewBox="0 0 44 44" class="donut" aria-hidden="true">
-                <circle class="donut-track" cx="22" cy="22" r="18"></circle>
-                <circle class="donut-val" id="whiteDonut" cx="22" cy="22" r="18"></circle>
-              </svg>
               <span class="gh-acc-val" id="whiteAcc">—</span>
+              <span class="gh-meter" role="img" aria-label="doğruluk"><i class="gh-meter-fill" id="whiteMeter"></i></span>
             </div>
           </div>
 
@@ -125,11 +106,8 @@
 
           <div class="gh-player right">
             <div class="gh-acc">
-              <svg viewBox="0 0 44 44" class="donut" aria-hidden="true">
-                <circle class="donut-track" cx="22" cy="22" r="18"></circle>
-                <circle class="donut-val" id="blackDonut" cx="22" cy="22" r="18"></circle>
-              </svg>
               <span class="gh-acc-val" id="blackAcc">—</span>
+              <span class="gh-meter" role="img" aria-label="doğruluk"><i class="gh-meter-fill" id="blackMeter"></i></span>
             </div>
             <div class="gh-info">
               <span class="gh-name" id="blackName">Siyah</span>
@@ -155,15 +133,15 @@
           </div>
 
           <div class="controls">
-            <button class="ctrl-btn" id="startBtn" title="Başa dön (Home)">⏮</button>
-            <button class="ctrl-btn" id="prevBtn" title="Önceki hamle (←)">◀</button>
-            <button class="ctrl-btn primary" id="playBtn" title="Oynat / duraklat (Boşluk)">▶</button>
-            <button class="ctrl-btn" id="nextBtn" title="Sonraki hamle (→)">▶</button>
-            <button class="ctrl-btn" id="endBtn" title="Sona git (End)">⏭</button>
+            <button class="ctrl-btn" id="startBtn" title="Başa dön (Home)" aria-label="Başa dön (Home)"><span class="ctrl-icon" data-icon="first"></span></button>
+            <button class="ctrl-btn" id="prevBtn" title="Önceki hamle (←)" aria-label="Önceki hamle (←)"><span class="ctrl-icon" data-icon="prev"></span></button>
+            <button class="ctrl-btn primary" id="playBtn" title="Oynat / duraklat (Boşluk)" aria-label="Oynat / duraklat (Boşluk)"><span class="ctrl-icon" data-icon="play"></span></button>
+            <button class="ctrl-btn" id="nextBtn" title="Sonraki hamle (→)" aria-label="Sonraki hamle (→)"><span class="ctrl-icon" data-icon="next"></span></button>
+            <button class="ctrl-btn" id="endBtn" title="Sona git (End)" aria-label="Sona git (End)"><span class="ctrl-icon" data-icon="last"></span></button>
             <span class="ctrl-sep"></span>
-            <button class="ctrl-btn" id="flipBtn" title="Tahtayı çevir (F)">⇅</button>
-            <button class="ctrl-btn" id="engineMoveBtn" title="Bu konum için motor hamlesi oyna">🤖</button>
-            <button class="ctrl-btn" id="resetExploreBtn" title="Keşif modundan çık (Esc)">↺</button>
+            <button class="ctrl-btn" id="flipBtn" title="Tahtayı çevir (F)" aria-label="Tahtayı çevir (F)"><span class="ctrl-icon" data-icon="flip"></span></button>
+            <button class="ctrl-btn" id="engineMoveBtn" title="Bu konum için motor hamlesi oyna" aria-label="Bu konum için motor hamlesi oyna"><span class="ctrl-icon" data-icon="ai"></span></button>
+            <button class="ctrl-btn" id="resetExploreBtn" title="Keşif modundan çık (Esc)" aria-label="Keşif modundan çık"><span class="ctrl-icon" data-icon="close"></span></button>
             <select id="speedSelect" title="Oynatma hızı">
               <option value="1600">Yavaş</option>
               <option value="900" selected>Normal</option>
@@ -191,10 +169,10 @@
           <div class="panel">
             <div class="panel-head">
               <div class="tabs" role="tablist">
-                <button class="tab-button active" data-tab="moves" role="tab" aria-selected="true">Hamleler</button>
-                <button class="tab-button" data-tab="chart" role="tab" aria-selected="false">Grafik</button>
-                <button class="tab-button" data-tab="coach" role="tab" aria-selected="false">Koç notları</button>
-                <button class="tab-button" data-tab="ai" role="tab" aria-selected="false">AI Koç <span class="beta-badge">beta</span></button>
+                <button class="tab-button active" data-tab="moves" role="tab" aria-selected="true"><span class="tab-icon" data-icon="moves"></span>Hamleler</button>
+                <button class="tab-button" data-tab="chart" role="tab" aria-selected="false"><span class="tab-icon" data-icon="chart"></span>Grafik</button>
+                <button class="tab-button" data-tab="coach" role="tab" aria-selected="false"><span class="tab-icon" data-icon="coach"></span>Koç notları</button>
+                <button class="tab-button" data-tab="ai" role="tab" aria-selected="false"><span class="tab-icon" data-icon="ai"></span>AI Koç</button>
               </div>
               <span class="meta" id="moveCountLabel2"></span>
             </div>
@@ -212,30 +190,47 @@
             </div>
 
             <div class="tab-pane" data-pane="ai" hidden>
-              <div class="ai-setup" id="aiSetup">
+              <div class="ai-run" id="aiRun">
                 <p class="ai-intro">
-                  Yapay zeka koç, motorun bulgularını <strong>Gemini</strong> ile yorumlar.
-                  Anahtar sunucuda güvende durur; tarayıcınız yalnızca kendi
-                  <em>Cloudflare Worker</em> adresinizi bilir.
+                  Yapay zeka koç, motorun bulgularını yorumlar: güçlü ve zayıf yönler,
+                  kritik anlar ve çalışma önerileri. Anahtar sunucudadır; tarayıcınıza
+                  hiçbir anahtar veya hesap gerekmez.
                 </p>
-                <ol class="ai-steps">
-                  <li><code>worker/</code> klasöründeki kodu Cloudflare'a deploy edin:
-                    <pre>cd worker
+                <div class="ai-url-row" style="margin-top:12px">
+                  <button class="btn accent" id="aiGenerateBtn">AI koç yorumu üret</button>
+                  <button class="btn ghost" id="aiCancelBtn" hidden>İptal</button>
+                  <span class="ai-hint" id="aiCostHint"></span>
+                </div>
+                <div class="ai-progress" id="aiProgress" hidden><div class="progress-track"><div class="progress-bar" id="aiProgressBar"></div></div><span class="progress-text" id="aiProgressText">Yapay zeka düşünüyor…</span></div>
+                <div id="aiOutput"></div>
+                <div class="ai-status" id="aiStatus"></div>
+
+                <details class="ai-advanced">
+                  <summary>Kendi sunucunuzu kullanmak isteyenler için</summary>
+                  <div class="ai-advanced-body">
+                    <p class="ai-intro">Varsayılan olarak Vezir'in koç sunucusu kullanılır. Kendi Cloudflare
+                      Worker'ınızı çalıştırmak isterseniz adresini aşağıya yazın; anahtar yine tarayıcıya
+                      değil, sunucunuzda kalır.</p>
+                    <ol class="ai-steps">
+                      <li><code>worker/</code> klasöründeki kodu Cloudflare'a deploy edin:
+                        <pre>cd worker
 npx wrangler secret put GEMINI_API_KEY
 npx wrangler deploy</pre></li>
-                  <li>Çıkan adresi (örn. <code>https://vezir-ai-coach.&lt;adiniz&gt;.workers.dev</code>) aşağıya yapıştırın ve kaydedin.</li>
-                </ol>
-                <div class="ai-url-row">
-                  <input type="text" id="aiWorkerUrl" placeholder="https://vezir-ai-coach.kullanici.workers.dev" />
-                  <button class="btn primary" id="aiSaveUrlBtn">Kaydet</button>
-                  <button class="btn ghost" id="aiTestUrlBtn">Bağlantıyı test et</button>
-                </div>
-                <div class="ai-status" id="aiStatus"></div>
+                      <li>Çıkan adresi aşağıya yapıştırıp kaydedin.</li>
+                    </ol>
+                    <div class="ai-url-row">
+                      <input type="text" id="aiWorkerUrl" placeholder="https://sizin-worker.workers.dev" />
+                      <button class="btn primary" id="aiSaveUrlBtn">Kaydet</button>
+                      <button class="btn ghost" id="aiTestUrlBtn">Bağlantıyı test et</button>
+                      <button class="btn ghost" id="aiResetUrlBtn">Varsayılana dön</button>
+                    </div>
+                  </div>
+                </details>
               </div>
 
-              <div class="ai-run" id="aiRun" hidden>
+
                 <div class="ai-url-row">
-                  <button class="btn accent" id="aiGenerateBtn">✨ AI koç yorumu üret</button>
+                  <button class="btn accent" id="aiGenerateBtn"><span class="btn-icon" data-icon="ai"></span>AI koç yorumu üret</button>
                   <button class="btn ghost" id="aiCancelBtn" hidden>İptal</button>
                   <span class="ai-hint" id="aiCostHint"></span>
                 </div>
@@ -253,7 +248,7 @@ npx wrangler deploy</pre></li>
             </div>
             <div class="tab-pane" style="display:flex;flex-direction:column;gap:12px">
               <div class="btn-row">
-                <button class="btn primary" id="analyzeBtn">Tüm oyunu analiz et</button>
+                <button class="btn primary" id="analyzeBtn"><span class="btn-icon" data-icon="analyze"></span>Tüm oyunu analiz et</button>
                 <button class="btn ghost" id="abortBtn" hidden>Durdur</button>
                 <select id="depthSelect" title="Hamle başına düşünme süresi">
                   <option value="150">Hızlı (150 ms)</option>
@@ -295,6 +290,7 @@ npx wrangler deploy</pre></li>
 
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
+    <script type="module" src="js/icons.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

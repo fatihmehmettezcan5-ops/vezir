@@ -48,14 +48,17 @@ ok(!evil.includes('<img'), 'kullanici verisi escape edildi');
 const mem = new Map();
 const fakeStorage = { getItem: (k) => (mem.has(k) ? mem.get(k) : null), setItem: (k, v) => mem.set(k, v), removeItem: (k) => mem.delete(k) };
 const coach = new AiCoach(fakeStorage);
-ok(coach.isConfigured() === false, 'baslangicta yapilandirilmamis');
+// Sıfır kurulum: kullanıcı hiçbir adres girmeden koç kullanıma hazır gelir
+ok(coach.isConfigured() === true, 'baslangicta hazir (kurulum adimi yok)');
+ok(coach.getWorkerUrl().startsWith('https://'), 'varsayilan koç sunucusu: ' + coach.getWorkerUrl());
+ok(coach.isCustom() === false, 'baslangicta varsayilan sunucu kullaniliyor');
 
-let threw = false;
-try { await coach.generate(payload); } catch (e) {
-  threw = true;
-  ok(e instanceof AiCoachError && e.code === 'not_configured', 'yapilandirilmamis hata kodu');
-}
-ok(threw, 'yapilandirilmamissa hata firlatti');
+// Kullanıcı kendi adresini girerse o devreye girer, sıfırlayınca varsayılana döner
+coach.setWorkerUrl('https://ozel.workers.dev/');
+ok(coach.isCustom() === true, 'ozel adres girildiginde isCustom');
+ok(coach.getWorkerUrl() === 'https://ozel.workers.dev', 'sondaki egik cizgi temizlendi: ' + coach.getWorkerUrl());
+coach.clearWorkerUrl();
+ok(coach.isCustom() === false && coach.isConfigured() === true, 'sifirlayinca varsayilana doner');
 
 coach.setWorkerUrl('https://ornek.workers.dev/');
 ok(coach.getWorkerUrl() === 'https://ornek.workers.dev', 'sondaki slash temizlendi');
@@ -64,7 +67,7 @@ ok(coach.isConfigured() === true, 'yapilandirildi');
 // ağ hatası
 const realFetch = globalThis.fetch;
 globalThis.fetch = () => Promise.reject(new TypeError('Failed to fetch'));
-threw = false;
+let threw = false;
 try { await coach.generate(payload); } catch (e) {
   threw = true;
   ok(e.code === 'unreachable', 'ag hatasi kodu: ' + e.code);

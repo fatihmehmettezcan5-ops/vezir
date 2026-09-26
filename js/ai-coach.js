@@ -6,6 +6,8 @@
 // değişkenindedir; tarayıcı yalnızca worker adresini bilir.
 
 const WORKER_URL_KEY = 'vezir.workerUrl';
+// Varsayılan koç sunucusu: kullanıcı hiçbir adres girmeden AI Koç'u kullanır.
+const DEFAULT_WORKER_URL = 'https://vezir-ai-coach.fatihmehmettezcan5.workers.dev';
 const REQUEST_TIMEOUT_MS = 90000;
 
 export class AiCoachError extends Error {
@@ -19,8 +21,16 @@ export class AiCoach {
   }
 
   getWorkerUrl() {
-    try { return (this._storage && this._storage.getItem(WORKER_URL_KEY)) || ''; }
-    catch (e) { return ''; }
+    try {
+      const stored = this._storage && this._storage.getItem(WORKER_URL_KEY);
+      return (stored && stored.trim()) || DEFAULT_WORKER_URL;
+    } catch (e) { return DEFAULT_WORKER_URL; }
+  }
+
+  /* Kullanıcı kendi adresini mi giriyor, yoksa varsayılan mı kullanılıyor? */
+  isCustom() {
+    try { const v = this._storage && this._storage.getItem(WORKER_URL_KEY); return !!(v && v.trim()); }
+    catch (e) { return false; }
   }
 
   setWorkerUrl(url) {

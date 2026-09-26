@@ -22,7 +22,7 @@ API anahtarı veya sunucu gerekmez.
 | **Tahta** | SVG tahta; son hamle, şah, yasal hedefler, en iyi hamle oku; tıklayarak keşif modunda hamle deneme, "motor hamlesi oyna" |
 | **Koç notları** | Kural tabanlı Türkçe rapor: kritik anlar, ilk açılış sapması, kaybedilen kazanma pozisyonları, asılı taşlar, çalışma planı |
 | **Dışa aktarma** | PGN indirme ve Markdown analiz raporu indirme |
-| **Arayüz** | Oyun başlık kartı (oyuncu kartları + doğruluk halkaları + sınıf çipleri + faz özeti), hamle listesinde hamle başına değerlendirme çubuğu ve doğruluk yüzdesi, kritik anlar seridi (tıklayınca o hamleye gider), seçili hamle kartı (yorum cümlesi + değerlendirme geçiş çubuğu + devam çizgisi), grafikte faz bantları/hover ipucu/tıklayarak gitme, koyu/açık tema, klavye kısayolları (← →, Boşluk, Home/End, F, Esc), mobil uyumlu tek kolon düzen |
+| **Arayüz** | Oyun başlık kartı
 | **Tahta** | Gömülü SVG taş seti (Unicode glif değil — her işletim sisteminde birebir aynı), kare içi koordinatlar, son hamle/şah/seçim vurguları, en iyi hamle oku (ok uçlu), yasal hedef noktaları ve alma halkaları, terfi (piece promotion) seçici, tıklama ile keşif modu |
 
 ---
@@ -78,6 +78,7 @@ scripts/
   setup-domain.mjs       kendi alan adını Pages + Workers'a bağlar, ALLOWED_ORIGINS günceller
   board.js               SVG tahta görünümü (vurgu, ok, hedef noktaları, terfi seçici, etkileşim)
   pieces.js              gömülü SVG taş seti (createElementNS ile deterministik üretim)
+  icons.js               çizilmiş SVG ikon seti (Unicode glif / emoji yok)
   chart.js               SVG değerlendirme grafiği
   app.js                 durum yönetimi, görünüm bağlama, analiz akışı, dışa aktarma
 test/                    Node tabanlı testler (aşağıya bakın)
@@ -121,11 +122,11 @@ npm test
 | `test/analysis.test.mjs` | 17 doğrulama: gerçek motorun üzerinden sınıflandırma, doğruluk, açılış tespiti |
 | `test/coach.test.mjs` | 7 doğrulama: bölümler, markdown rapor, istatistikler |
 | `test/board.test.mjs` | 20 doğrulama: SVG taş üretimi, kare/koordinat sayısı, vurgular, ok, hedefler, çevirme, terfi seçici, kare tıklama |
-| `test/ai-coach.test.mjs` | 56 doğrulama: istek gövdesi, HTML kaçış, worker protokolü, CORS + joker origin, IP kotası, model yedeği, yeniden deneme |
-| `test/ui.test.mjs` | 64 doğrulama: jsdom ile tüm arayüz akışı (yükleme → analiz → sekmeler → klavye → keşif modu → tema → indirme) |
+| `test/ai-coach.test.mjs` | 59 doğrulama: istek gövdesi, HTML kaçış, worker protokolü, CORS + joker origin, IP kotası, model yedeği, yeniden deneme |
+| `test/ui.test.mjs` | 67 doğrulama: jsdom ile tüm arayüz akışı (yükleme → analiz → sekmeler → klavye → keşif modu → tema → indirme) |
 | `test/matpst.test.mjs` | 13.911 konumda artımlı materyal + PST tutarlılığı (1.719 alma, 24 terfi, 12 rok) |
 
-Toplam: **261 doğrulama + 13.911 konum kontrolü, 0 hata.**
+Toplam: **267 doğrulama + 13.911 konum kontrolü, 0 hata.**
 
 `test/divide.mjs` perft dağıtım aracıdır (`python-chess` ile karşılaştırma için).
 
@@ -135,15 +136,27 @@ Toplam: **261 doğrulama + 13.911 konum kontrolü, 0 hata.**
 
 ---
 
-## AI Koç (isteğe bağlı)
+## AI Koç (hazır gelir)
 
-Vezir'in kural tabanlı koç notları her zaman çalışır. İsteğe bağlı olarak
-**AI Koç** sekmesi, motorun bulgularını Google Gemini'ye göndererek daha uzun,
-kişiselleştirilmiş bir yorum üretir.
+Vezir'in kural tabanlı koç notları her zaman çalışır. Ek olarak **AI Koç** sekmesi,
+motorun bulgularını Gemini'ye göndererek daha uzun ve kişiselleştirilmiş bir yorum üretir.
 
-**Neden bir Cloudflare Worker?** API anahtarını tarayıcıya koymak anahtarınızın
-başkaları tarafından kullanılmasına yol açar. Worker anahtarı sunucuda tutar,
-IP başına günlük limit uygular ve yalnızca beklenen biçimdeki istekleri geçirir.
+**Kullanımı:** AI Koç sekmesine geçin ve **AI koç yorumu üret** düğmesine basın. Adres
+girmek, anahtar girmek veya bir şey dağıtmak gerekmez — koç sunucusu uygulamaya gömülüdür:
+
+```
+https://vezir-ai-coach.fatihmehmettezcan5.workers.dev
+```
+
+Kendi sunucunuzu kullanmak isteyenler için sekmenin altındaki
+**"Kendi sunucunuzu kullanmak isteyenler için"** bölümünden adres yazılabilir;
+**Varsayılana dön** düğmesi geri alır. Anahtar her tarafta yalnızca sunucuda kalır.
+
+**Neden bir Cloudflare Worker?** API anahtarını tarayıcıya koymak anahtarınızın başkaları
+tarafından kullanılmasına yol açar. Worker anahtarı sunucuda tutar, IP başına günlük limit
+uygular ve yalnızca beklenen biçimdeki istekleri geçirir.
+
+Kendi worker'ınızı çalıştırmak isterseniz:
 
 ```bash
 # 1) Google AI Studio'dan ücretsiz API anahtarı al: https://aistudio.google.com/apikey
@@ -152,41 +165,10 @@ cd worker
 npm install -D wrangler          # veya: npx wrangler deploy
 npx wrangler secret put GEMINI_API_KEY
 npx wrangler deploy
-# 3) Çıkan adresi uygulamadaki "AI Koç" sekmesine yapıştır
+# 3) Çıkan adresi "AI Koç" sekmesindeki gelişmiş bölüme yapıştır
 ```
 
 İsteğe bağlı ayarlar (`wrangler.toml` içinde `[vars]`):
-
-| Değişken | Varsayılan | Açıklama |
-|---|---|---|
-| `GEMINI_MODEL` | `gemini-3.8-flash` | Kullanılacak model |
-| `RATE_LIMIT` | `40` | IP başına günlük istek sayısı |
-| `ALLOWED_ORIGINS` | `*` | Virgülle ayrılmış izinli site adresleri (örn. `https://vezir.pages.dev`) |
-
-**Gerçek dünya notları (Eylül 2026'da canlı test edildi):**
-
-- Google AI Studio artık `AIza…` yerine **`AQ.…`** ön ekli anahtarlar veriyor; bu anahtarlar
-  da `generativelanguage.googleapis.com` üzerinden çalışır, ek ayar gerekmez.
-- `gemini-2.5-flash` ve `gemini-2.5-flash-lite` **yeni kullanıcılara kapatıldı** (HTTP 404
-  "no longer available to new users"). Worker bunu görünce otomatik olarak
-  `gemini-3.8-flash → gemini-3.7-flash → gemini-3.5-flash → gemini-flash-latest`
-  zincirine düşer.
-- Gemini 3.x modelleri "düşünen" modellerdir: `maxOutputTokens` 2048 iken JSON yerine
-  "Here is the JSON…" gibi bir cümle dönüyordu (düşünme token'ları bütçeyi yiyordu).
-  Worker şimdi `maxOutputTokens: 8192` + `thinkingBudget: 1024` kullanıyor.
-- Google modelleri sık sık **503 "high demand"** döndürüyor; worker model başına 2 kez,
-  kısa bekleyerek yeniden deniyor ve başarısız olursa Türkçe açıklama gösteriyor.
-- 33 hamlelik bir oyun için ölçülen maliyet: **631 girdi + 888 çıktı token**, ~11 saniye.
-  Ücretsiz kotada bu birkaç yüz rapora tekabül eder.
-
-Worker'ın gönderdiği veri yalnızca hamle listesi, skorlar ve hamle sınıflarıdır;
-kişisel veri gönderilmez. Gemini yanıtı JSON şemasına zorlanır, bu yüzden arayüz
-her zaman düzgün biçimlendirilebilir.
-
-**Maliyet:** Ücretsiz kotada oyun başına birkaç bin token — bir analiz raporu
-ücretli mesaj başına çok düşüktür. Kota aşımında arayüz anlaşılır Türkçe hata gösterir.
-
----
 
 ## Geliştirici notu
 

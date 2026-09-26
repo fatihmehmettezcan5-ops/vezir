@@ -33,16 +33,16 @@ export function formatScore(score, mate) {
 }
 
 export const CLASSES = {
-  brilliant: { label: 'Parlak', glyph: '‼', short: 'parlak', color: '#26c6da' },
-  best:      { label: 'En iyi', glyph: '★', short: 'en-iyi', color: '#81c784' },
-  excellent: { label: 'Mükemmel', glyph: '!', short: 'muhtesem', color: '#66bb6a' },
-  good:      { label: 'İyi', glyph: '✓', short: 'iyi', color: '#9ccc65' },
-  inaccuracy:{ label: 'Şüpheli', glyph: '?!', short: 'supheli', color: '#ffca28' },
-  mistake:   { label: 'Hata', glyph: '?', short: 'hata', color: '#ffa726' },
-  blunder:   { label: 'Vahim hata', glyph: '??', short: 'vahim', color: '#ef5350' },
-  forced:    { label: 'Zorunlu', glyph: '·', short: 'zorunlu', color: '#78909c' },
-  mate:      { label: 'Mat', glyph: '#', short: 'mat', color: '#ab47bc' },
-  book:      { label: 'Kitap', glyph: '📖', short: 'kitap', color: '#64b5f6' }
+  brilliant: { label: 'Parlak', glyph: '‼', short: 'parlak', color: 'var(--cls-brilliant)' },
+  best:      { label: 'En iyi', glyph: '★', short: 'en-iyi', color: 'var(--cls-best)' },
+  excellent: { label: 'Mükemmel', glyph: '!', short: 'muhtesem', color: 'var(--cls-excellent)' },
+  good:      { label: 'İyi', glyph: '✓', short: 'iyi', color: 'var(--cls-good)' },
+  inaccuracy:{ label: 'Şüpheli', glyph: '?!', short: 'supheli', color: 'var(--cls-inaccuracy)' },
+  mistake:   { label: 'Hata', glyph: '?', short: 'hata', color: 'var(--cls-mistake)' },
+  blunder:   { label: 'Vahim hata', glyph: '??', short: 'vahim', color: 'var(--cls-blunder)' },
+  forced:    { label: 'Zorunlu', glyph: '·', short: 'zorunlu', color: 'var(--cls-forced)' },
+  mate:      { label: 'Mat', glyph: '#', short: 'mat', color: 'var(--cls-mate)' },
+  book:      { label: 'Kitap', glyph: '📖', short: 'kitap', color: 'var(--cls-book)' }
 };
 
 function classify(winLoss, isBestMove, isMateMove, isBrilliant) {
@@ -189,7 +189,6 @@ export class GameAnalyzer {
 
       const wpBefore = scoreToWinPercent(scoreBefore, mateBefore);
       const wpAfter = scoreToWinPercent(scoreAfter, mateAfter);
-      const winLoss = Math.max(0, wpBefore - wpAfter);
 
       const isBestMove = bestMove ? (bestMove.from === mv.move.from && bestMove.to === mv.move.to && bestMove.promotion === mv.move.promotion) : false;
       const forced = before.legalMoves === 1;
@@ -209,6 +208,8 @@ export class GameAnalyzer {
         if (sacrificed >= 200 && wpAfter >= 40) isBrilliant = true;
       }
 
+      // Mat bulan hamle kayıp üretmez: kazanma oranı değişmez, doğruluk tamdır.
+      const winLoss = isMateMove ? 0 : Math.max(0, wpBefore - wpAfter);
       const cls = forced ? 'forced' : classify(winLoss, isBestMove, isMateMove, isBrilliant);
       const accuracy = forced ? 100 : moveAccuracy(winLoss);
 

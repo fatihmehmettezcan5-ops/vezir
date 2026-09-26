@@ -1,6 +1,7 @@
 // js/app.js
 // Vezir ana uygulaması: oyun yükleme, analiz, tahta, gezinme, koç notları.
 
+import { icon, classIcon } from './icons.js';
 import { Chess, moveFromUci, squareName, isInCheck } from './chess.js';
 import { parsePgn, buildPositions, serializePgn, sampleGames } from './pgn.js';
 import { Engine } from './engine.js';
@@ -91,6 +92,8 @@ async function init() {
 
 function bindUI() {
   $('loadPgnBtn').addEventListener('click', () => loadPgnText($('pgnInput').value));
+  const pgnForm = $('pgnForm');
+  if (pgnForm) pgnForm.addEventListener('submit', (e) => { e.preventDefault(); loadPgn(); });
   $('clearPgnBtn').addEventListener('click', () => { $('pgnInput').value = ''; });
   $('newGameBtn').addEventListener('click', backToImport);
   $('analyzeBtn').addEventListener('click', startAnalysis);
@@ -103,6 +106,8 @@ function bindUI() {
   $('flipBtn').addEventListener('click', () => { S.board.flip(); showPosition(); });
   $('resetExploreBtn').addEventListener('click', () => { S.explore = null; goToMove(S.currentIdx); });
   $('themeBtn').addEventListener('click', toggleTheme);
+  mountIcons(document);
+  setThemeIcon();
   $('exportPgnBtn').addEventListener('click', exportPgn);
   $('exportReportBtn').addEventListener('click', exportReport);
   $('engineMoveBtn').addEventListener('click', playEngineMove);
@@ -116,20 +121,35 @@ function bindUI() {
   // AI Koç
   $('aiSaveUrlBtn').addEventListener('click', saveAiWorkerUrl);
   $('aiTestUrlBtn').addEventListener('click', testAiWorkerUrl);
+  if ($('aiResetUrlBtn')) $('aiResetUrlBtn').addEventListener('click', resetAiWorkerUrl);
   $('aiGenerateBtn').addEventListener('click', generateAiCoach);
   $('aiCancelBtn').addEventListener('click', () => { if (S.aiAbort) S.aiAbort.abort(); });
 
-  // Dosya yükleme
+  // Dosya yükleme: düğme, sürükle-bırak (sayfanın her yerinde)
   const dz = $('dropZone');
-  dz.addEventListener('click', () => $('fileInput').click());
+  if (dz) {
+    dz.addEventListener('click', () => $('fileInput').click());
+    ['dragover', 'dragenter'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
+    dz.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
+    });
+  }
+  window.addEventListener('dragover', (e) => { e.preventDefault(); if (dz) { dz.hidden = false; dz.classList.add('over'); } });
+  window.addEventListener('dragleave', (e) => { if (e.relatedTarget === null && dz) { dz.classList.remove('over'); dz.hidden = true; } });
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (dz) { dz.classList.remove('over'); dz.hidden = true; }
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) readFile(f);
+  });
+  if ($('pickFileBtn')) $('pickFileBtn').addEventListener('click', () => $('fileInput').click());
   $('fileInput').addEventListener('change', (e) => {
     if (e.target.files && e.target.files[0]) readFile(e.target.files[0]);
   });
-  ['dragover', 'dragenter'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
-  ['dragleave', 'drop'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.remove('over'); }));
-  dz.addEventListener('drop', (e) => {
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]);
-  });
+  const remoteBox = $('remoteBox');
+  if (remoteBox && $('ccToggleBtn')) $('ccToggleBtn').addEventListener('click', () => { remoteBox.hidden = false; $('ccUser').focus(); });
+  if (remoteBox && $('liToggleBtn')) $('liToggleBtn').addEventListener('click', () => { remoteBox.hidden = false; $('liUser').focus(); });
 
   // Uzaktan oyun çekme
   $('ccFetchBtn').addEventListener('click', fetchChesscom);
@@ -207,8 +227,8 @@ function updatePlayerInfo() {
   if ($('moveCountLabel2')) $('moveCountLabel2').textContent = S.parsed.moves.length + ' hamle';
   $('whiteAcc').textContent = '—';
   $('blackAcc').textContent = '—';
-  setDonut('whiteDonut', 0);
-  setDonut('blackDonut', 0);
+  setMeter('whiteMeter', 0);
+  setMeter('blackMeter', 0);
   $('ghStats').innerHTML = '';
   $('criticalStrip').hidden = true;
   if (S.parsed.moves.length) {
@@ -217,14 +237,12 @@ function updatePlayerInfo() {
   }
 }
 
-function setDonut(id, accuracy) {
+function setMeter(id, accuracy) {
   const el = $(id);
   if (!el) return;
-  const C = 2 * Math.PI * 18;
-  const v = Math.max(0, Math.min(100, accuracy));
-  el.style.strokeDasharray = C.toFixed(1);
-  el.style.strokeDashoffset = (C * (1 - v / 100)).toFixed(1);
-  el.setAttribute('stroke', accuracy >= 90 ? 'var(--green)' : accuracy >= 75 ? 'var(--gold)' : 'var(--red)');
+  const v = Math.max(0, Math.min(100, accuracy)) / 100;
+  el.style.transform = `scaleX(${v.toFixed(3)})`;
+  el.title = `%${accuracy.toFixed(1)}`;
 }
 
 function renderGameStats() {
@@ -238,14 +256,14 @@ function renderGameStats() {
     const n = (sum.counts.w[key] || 0) + (sum.counts.b[key] || 0);
     if (!n) continue;
     const cls = CLASSES[key];
-    html += `<span class="gh-chip" style="--c:${cls.color}" title="${cls.label}"><b>${cls.glyph}</b> ${cls.label} <i>${n}</i></span>`;
+    html += `<span class="gh-chip" style="--c:${cls.color}" title="${cls.label}">${classIcon(key)} ${cls.label} <i>${n}</i></span>`;
   }
   const ph = sum.phaseAccuracy;
-  html += `<span class="gh-chip phase" title="Açılış / orta oyun / son oyun doğruluğu (beyaz · siyah)">📊 Açılış %${ph.opening.w.toFixed(0)}/%${ph.opening.b.toFixed(0)} · Orta %${ph.middlegame.w.toFixed(0)}/%${ph.middlegame.b.toFixed(0)} · Son %${ph.endgame.w.toFixed(0)}/%${ph.endgame.b.toFixed(0)}</span>`;
+  html += `<span class="gh-chip phase" title="Açılış / orta oyun / son oyun doğruluğu (beyaz · siyah)">${icon('chart', 13)} Açılış %${ph.opening.w.toFixed(0)}/%${ph.opening.b.toFixed(0)} · Orta %${ph.middlegame.w.toFixed(0)}/%${ph.middlegame.b.toFixed(0)} · Son %${ph.endgame.w.toFixed(0)}/%${ph.endgame.b.toFixed(0)}</span>`;
   stats.innerHTML = html;
 
-  setDonut('whiteDonut', sum.accuracy.w);
-  setDonut('blackDonut', sum.accuracy.b);
+  setMeter('whiteMeter', sum.accuracy.w);
+  setMeter('blackMeter', sum.accuracy.b);
   $('whiteAcc').textContent = '%' + sum.accuracy.w.toFixed(1);
   $('blackAcc').textContent = '%' + sum.accuracy.b.toFixed(1);
 }
@@ -270,7 +288,7 @@ function renderCritical() {
     card.innerHTML = `
       <span class="cs-num">${num}</span>
       <span class="cs-san">${escapeHtml(m.san)}</span>
-      <span class="cs-badge">${cls.glyph} ${cls.label}</span>
+      <span class="cs-badge">${classIcon(m.class)} ${cls.label}</span>
       <span class="cs-loss">−${m.winLoss.toFixed(1)} puan</span>
       <span class="cs-best">en iyi: ${escapeHtml(m.bestSan || '—')}</span>`;
     card.addEventListener('click', () => { S.explore = null; goToMove(m.ply + 1); switchTab('moves'); });
@@ -352,7 +370,7 @@ function updateEvalBar(fen, idx) {
   } else {
     pct = 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * score)) - 1);
   }
-  $('evalFill').style.width = Math.max(2, Math.min(98, pct)) + '%';
+  $('evalFill').style.transform = `scaleX(${(Math.max(2, Math.min(98, pct)) / 100).toFixed(3)})`;
   $('evalLabel').textContent = mate !== null && mate !== undefined
     ? (mate > 0 ? '#' + mate : '-#' + Math.abs(mate))
     : (score > 0 ? '+' : '') + (score / 100).toFixed(2);
@@ -377,7 +395,7 @@ function updateMoveInfo(idx) {
       : `${mover} bu hamlede ${m.winLoss.toFixed(1)} kazanma puanı kaybetti; en iyisi <b>${escapeHtml(m.bestSan || '—')}</b> idi.`;
   card.innerHTML = `
     <div class="mc-head">
-      <span class="mc-badge" style="--c:${cls.color}">${cls.glyph} ${cls.label}</span>
+      <span class="mc-badge" style="--c:${cls.color}">${classIcon(m.class)} ${cls.label}</span>
       <span class="mc-acc">doğruluk <b>%${m.accuracy.toFixed(1)}</b></span>
     </div>
     <div class="mc-verdict">${verdict}</div>
@@ -399,7 +417,7 @@ function updateMoveInfo(idx) {
       <span>·</span><span>${m.phase === 'opening' ? 'açılış' : m.phase === 'endgame' ? 'son oyun' : 'orta oyun'}</span>
     </div>
     ${m.pvSan && m.pvSan.length ? `<div class="mc-pv"><span class="mc-k">Devam çizgisi</span><span class="mc-pv-line">${escapeHtml(m.pvSan.slice(0, 8).join(' '))}</span></div>` : ''}
-    ${m.comment ? `<div class="mc-comment">💬 ${escapeHtml(m.comment)}</div>` : ''}
+    ${m.comment ? `<div class="mc-comment">${icon('comment', 15)} ${escapeHtml(m.comment)}</div>` : ''}
   `;
 }
 
@@ -443,7 +461,9 @@ function moveEl(ply) {
     const cls = CLASSES[analysis.class];
     el.classList.add('cls-' + analysis.class);
     el.title = `${cls.label} · ${analysis.bestSan ? 'en iyi ' + analysis.bestSan : ''} · kazanma kaybı ${analysis.winLoss.toFixed(1)} puan`;
-    el.appendChild(span('ml-glyph', cls.glyph, `color:${cls.color}`));
+    const glyph = span('ml-glyph', '', `--c:${cls.color};color:var(--c)`);
+    glyph.innerHTML = classIcon(cls);
+    el.appendChild(glyph);
 
     // Değerlendirme çubuğu: merkezden avantajlı tarafa doğru dolar
     const bar = document.createElement('span');
@@ -634,7 +654,7 @@ async function startAnalysis() {
   $('analyzeBtn').disabled = true;
   $('abortBtn').hidden = false;
   $('progressWrap').hidden = false;
-  $('progressBar').style.width = '0%';
+  $('progressBar').style.transform = 'scaleX(0)';
   $('progressText').textContent = 'Hazırlanıyor…';
 
   const movetime = S.settings.movetime;
@@ -646,7 +666,7 @@ async function startAnalysis() {
       movetime,
       signal: { get aborted() { return S.abort; } },
       onProgress: (done, total, text) => {
-        $('progressBar').style.width = Math.round((done / total) * 100) + '%';
+        $('progressBar').style.transform = `scaleX(${(done / total).toFixed(3)})`;
         $('progressText').textContent = text;
       }
     });
@@ -662,6 +682,7 @@ async function startAnalysis() {
       renderGameStats();
       renderCritical();
       S.chart.setData(analyzer.moves);
+      goToMove(S.parsed.moves.length);
       showPosition();
       toast('Analiz tamamlandı', 'success');
       switchTab('coach');
@@ -736,15 +757,17 @@ function aiStatus(text, type) {
 }
 
 function refreshAiPane() {
-  const configured = S.aiCoach.isConfigured();
-  $('aiSetup').hidden = configured;
-  $('aiRun').hidden = !configured;
-  if (configured) {
-    $('aiWorkerUrl').value = S.aiCoach.getWorkerUrl();
-    $('aiCostHint').textContent = S.analyzer && S.analyzer.moves.length
-      ? `${S.analyzer.moves.length} hamlenin analizi gönderilecek`
-      : 'Önce oyunu analiz edin';
-  }
+  // AI Koç hazır gelir: kurulum adımı yok, yalnızca kendi sunucusunu
+  // kullanmak isteyenler "gelişmiş" bölümünden adres yazar.
+  const run = $('aiRun');
+  if (run) run.hidden = false;
+  const setup = $('aiSetup');
+  if (setup) setup.hidden = true;
+  const urlInput = $('aiWorkerUrl');
+  if (urlInput) urlInput.value = S.aiCoach.isCustom() ? S.aiCoach.getWorkerUrl() : '';
+  $('aiCostHint').textContent = S.analyzer && S.analyzer.moves.length
+    ? `${S.analyzer.moves.length} hamlenin analizi gönderilecek`
+    : 'Önce oyunu analiz edin';
 }
 
 async function saveAiWorkerUrl() {
@@ -754,6 +777,12 @@ async function saveAiWorkerUrl() {
   S.aiCoach.setWorkerUrl(url);
   aiStatus('Kaydedildi. Bağlantı test ediliyor…');
   await testAiWorkerUrl();
+}
+
+function resetAiWorkerUrl() {
+  S.aiCoach.clearWorkerUrl();
+  aiStatus('Varsayılan koç sunucusuna dönüldü.', 'ok');
+  refreshAiPane();
 }
 
 async function testAiWorkerUrl() {
@@ -780,13 +809,13 @@ async function generateAiCoach() {
   $('aiGenerateBtn').disabled = true;
   $('aiCancelBtn').hidden = false;
   $('aiProgress').hidden = false;
-  $('aiProgressBar').style.width = '35%';
+  $('aiProgressBar').style.transform = 'scaleX(0.35)';
   $('aiProgressText').textContent = 'Yapay zeka düşünüyor…';
   $('aiOutput').innerHTML = '';
 
   try {
     const res = await S.aiCoach.generate(payload, { signal: S.aiAbort.signal });
-    $('aiProgressBar').style.width = '100%';
+    $('aiProgressBar').style.transform = 'scaleX(1)';
     $('aiOutput').innerHTML = renderCoachHtml(res.coach, res);
     aiStatus('', '');
   } catch (e) {
@@ -817,7 +846,21 @@ function switchTab(tab) {
 
 function applyTheme() {
   document.documentElement.dataset.theme = S.settings.theme;
-  $('themeBtn').textContent = S.settings.theme === 'dark' ? '☀' : '☾';
+  setThemeIcon();
+}
+
+/* Yer tutucu span'lara çizilmiş ikonları yerleştir */
+function mountIcons(root) {
+  (root || document).querySelectorAll('[data-icon]').forEach((el) => {
+    const name = el.getAttribute('data-icon');
+    const size = el.classList.contains('tab-icon') ? 15 : el.classList.contains('btn-icon') ? 16 : 16;
+    el.innerHTML = icon(name, size);
+  });
+}
+
+function setThemeIcon() {
+  const el = $('themeIcon');
+  if (el) el.innerHTML = icon(S.settings.theme === 'dark' ? 'sun' : 'moon', 17);
 }
 
 function toggleTheme() {

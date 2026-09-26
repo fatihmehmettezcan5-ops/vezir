@@ -97,10 +97,10 @@ await new Promise(r => setTimeout(r, 30));
 ok($('moveCard').textContent.includes('Oynanan'), 'secili hamle karti dolduruldu');
 ok($('moveCard').querySelector('.mc-badge') !== null, 'sinif rozeti var');
 ok($('evalLabel').textContent !== '0.00', 'degerlendirme cubugu guncellendi: ' + $('evalLabel').textContent);
-const w1 = $('evalFill').style.width;
+const w1 = $('evalFill').style.transform;
 $('moveList').querySelectorAll('.ml-move')[12].click();
 await new Promise(r => setTimeout(r, 30));
-ok($('evalFill').style.width !== w1, 'degerlendirme cubugu hamleyle degisti: ' + w1 + ' -> ' + $('evalFill').style.width);
+ok($('evalFill').style.transform !== w1, 'degerlendirme cubugu hamleyle degisti: ' + w1 + ' -> ' + $('evalFill').style.transform);
 ok($('board').querySelectorAll('.piece').length > 0, 'tahta cizildi');
 
 // ---- Hamle listesi barlari / ozet karti / kritik anlar ----
@@ -111,8 +111,9 @@ ok(accs.length > 10 && /%\d+/.test(accs[0].textContent), 'dogruluk yuzdesi goste
 const fill = bars[0].querySelector('.ml-bar-fill');
 ok(fill && /%$/.test(fill.style.width || ''), 'bar dolgusu genisligi ayarli: ' + (fill && fill.style.width));
 
-const donut = $('whiteDonut');
-ok(donut.style.strokeDashoffset !== '' && donut.style.strokeDashoffset !== '113.1', 'beyaz donutu dolduruldu: ' + donut.style.strokeDashoffset);
+const meter = $('whiteMeter');
+ok(/scaleX\(0\.\d+\)/.test(meter.style.transform || ''), 'dogruluk olceri dolduruldu: ' + meter.style.transform);
+ok(/scaleX\(0\.\d+\)/.test($('blackMeter').style.transform || ''), 'siyah olceri dolduruldu');
 ok($('ghStats').querySelectorAll('.gh-chip').length >= 3, 'sinif cipleri: ' + $('ghStats').querySelectorAll('.gh-chip').length);
 ok($('ghStats').textContent.includes('Açılış'), 'faz ozeti cipinde');
 
@@ -193,9 +194,11 @@ ok(/\.pgn$/.test(downloaded || ''), 'PGN indirildi: ' + downloaded);
 
 // ---- AI Koç sekmesi ----
 window.document.querySelector('.tab-button[data-tab="ai"]').click();
-ok($('aiSetup').hidden === false, 'AI Koc kurulum ekrani gorunur');
-ok($('aiRun').hidden === true, 'kurulum oncesi uretim bolumu gizli');
-ok($('aiSetup').textContent.includes('wrangler'), 'deploy talimatlari var');
+ok($('aiRun').hidden === false, 'AI Koc hazir gelir (kurulum adimi yok)');
+ok($('aiGenerateBtn').disabled === false, 'AI koç uretim dugmesi etkin');
+ok($('aiGenerateBtn').textContent.includes('AI koç'), 'uretum dugmesi etiketli');
+ok(document.querySelector('.ai-advanced') !== null, 'kendi sunucusu icin gelismis bolum var');
+ok($('aiWorkerUrl').value === '', 'kullaniciya adres sormuyor');
 
 // anahtar verilmeden uretim denemesi
 $('aiGenerateBtn') && null;
@@ -221,8 +224,8 @@ globalThis.fetch = (url, opts) => {
 $('aiWorkerUrl').value = 'https://vezir-ai-coach.test.workers.dev';
 $('aiSaveUrlBtn').click();
 await new Promise(r => setTimeout(r, 50));
-ok($('aiSetup').hidden === true, 'adres kaydedilince kurulum ekrani kapanir');
-ok($('aiRun').hidden === false, 'uretim bolumu acilir');
+ok($('aiWorkerUrl').value === 'https://vezir-ai-coach.test.workers.dev', 'ozel adres kaydedildi: ' + $('aiWorkerUrl').value);
+ok($('aiCostHint').textContent.includes('hamle'), 'analiz verisi gonderilecegi yaziyor');
 ok($('aiStatus').textContent.includes('gemini'), 'baglanti testi mesaji: ' + $('aiStatus').textContent);
 
 $('aiGenerateBtn').click();
