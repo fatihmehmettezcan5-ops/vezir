@@ -22,7 +22,8 @@ API anahtarı veya sunucu gerekmez.
 | **Tahta** | SVG tahta; son hamle, şah, yasal hedefler, en iyi hamle oku; tıklayarak keşif modunda hamle deneme, "motor hamlesi oyna" |
 | **Koç notları** | Kural tabanlı Türkçe rapor: kritik anlar, ilk açılış sapması, kaybedilen kazanma pozisyonları, asılı taşlar, çalışma planı |
 | **Dışa aktarma** | PGN indirme ve Markdown analiz raporu indirme |
-| **Arayüz** | Koyu/açık tema, klavye kısayolları (← →, Boşluk, Home/End, F, Esc), mobil uyumlu tek kolon düzeni |
+| **Arayüz** | Oyun başlık kartı (oyuncu kartları + doğruluk halkaları + sınıf çipleri + faz özeti), hamle listesinde hamle başına değerlendirme çubuğu ve doğruluk yüzdesi, kritik anlar seridi (tıklayınca o hamleye gider), seçili hamle kartı (yorum cümlesi + değerlendirme geçiş çubuğu + devam çizgisi), grafikte faz bantları/hover ipucu/tıklayarak gitme, koyu/açık tema, klavye kısayolları (← →, Boşluk, Home/End, F, Esc), mobil uyumlu tek kolon düzen |
+| **Tahta** | Gömülü SVG taş seti (Unicode glif değil — her işletim sisteminde birebir aynı), kare içi koordinatlar, son hamle/şah/seçim vurguları, en iyi hamle oku (ok uçlu), yasal hedef noktaları ve alma halkaları, terfi (piece promotion) seçici, tıklama ile keşif modu |
 
 ---
 
@@ -75,7 +76,8 @@ worker/
   wrangler.toml          worker yapılandırması
 scripts/
   setup-domain.mjs       kendi alan adını Pages + Workers'a bağlar, ALLOWED_ORIGINS günceller
-  board.js               SVG tahta görünümü (vurgu, ok, hedef noktaları, etkileşim)
+  board.js               SVG tahta görünümü (vurgu, ok, hedef noktaları, terfi seçici, etkileşim)
+  pieces.js              gömülü SVG taş seti (createElementNS ile deterministik üretim)
   chart.js               SVG değerlendirme grafiği
   app.js                 durum yönetimi, görünüm bağlama, analiz akışı, dışa aktarma
 test/                    Node tabanlı testler (aşağıya bakın)
@@ -118,11 +120,12 @@ npm test
 | `test/pgn.test.mjs` | 35 doğrulama: başlıklar, yorum/$NAG, RAV, FEN, hata toparlama, gidiş-dönüş |
 | `test/analysis.test.mjs` | 17 doğrulama: gerçek motorun üzerinden sınıflandırma, doğruluk, açılış tespiti |
 | `test/coach.test.mjs` | 7 doğrulama: bölümler, markdown rapor, istatistikler |
-| `test/ai-coach.test.mjs` | 56 doğrulama: istek gövdesi, HTML kaçış, worker protokolü, CORS, IP kotası, model adı temizleme |
-| `test/ui.test.mjs` | 50 doğrulama: jsdom ile tüm arayüz akışı (yükleme → analiz → sekmeler → klavye → keşif modu → tema → indirme) |
+| `test/board.test.mjs` | 20 doğrulama: SVG taş üretimi, kare/koordinat sayısı, vurgular, ok, hedefler, çevirme, terfi seçici, kare tıklama |
+| `test/ai-coach.test.mjs` | 56 doğrulama: istek gövdesi, HTML kaçış, worker protokolü, CORS + joker origin, IP kotası, model yedeği, yeniden deneme |
+| `test/ui.test.mjs` | 64 doğrulama: jsdom ile tüm arayüz akışı (yükleme → analiz → sekmeler → klavye → keşif modu → tema → indirme) |
 | `test/matpst.test.mjs` | 13.911 konumda artımlı materyal + PST tutarlılığı (1.719 alma, 24 terfi, 12 rok) |
 
-Toplam: **227 doğrulama + 13.911 konum kontrolü, 0 hata.**
+Toplam: **261 doğrulama + 13.911 konum kontrolü, 0 hata.**
 
 `test/divide.mjs` perft dağıtım aracıdır (`python-chess` ile karşılaştırma için).
 
@@ -181,7 +184,7 @@ kişisel veri gönderilmez. Gemini yanıtı JSON şemasına zorlanır, bu yüzde
 her zaman düzgün biçimlendirilebilir.
 
 **Maliyet:** Ücretsiz kotada oyun başına birkaç bin token — bir analiz raporu
-ücretimesaj başına çok düşüktür. Kota aşımında arayüz anlaşılır Türkçe hata gösterir.
+ücretli mesaj başına çok düşüktür. Kota aşımında arayüz anlaşılır Türkçe hata gösterir.
 
 ---
 

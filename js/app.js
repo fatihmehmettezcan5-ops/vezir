@@ -52,7 +52,19 @@ async function init() {
   loadSettings();
   applyTheme();
 
-  S.board = new BoardView('board', { onSquare: onSquareClick });
+  S.board = new BoardView('board', {
+    onSquare: onSquareClick,
+    onPromotion: (from, to, piece) => {
+      const chess = S.explore || new Chess(S.fens[S.currentIdx]);
+      chess.move({ from, to, promotion: piece });
+      S.explore = chess;
+      S.board.setLastMove({ from, to });
+      S.board.selected = null;
+      S.board.setLegalTargets([]);
+      updateExploreBadge();
+      showPosition();
+    }
+  });
   S.chart = new EvalChart('chart', { onSelect: (ply) => goToMove(ply + 1) });
 
   renderSamples();
@@ -192,9 +204,77 @@ function updatePlayerInfo() {
   $('blackRating').textContent = h.BlackElo ? '(' + h.BlackElo + ')' : '';
   $('resultLabel').textContent = resultText(S.parsed.result);
   $('moveCountLabel').textContent = S.parsed.moves.length + ' hamle';
+  if ($('moveCountLabel2')) $('moveCountLabel2').textContent = S.parsed.moves.length + ' hamle';
+  $('whiteAcc').textContent = '—';
+  $('blackAcc').textContent = '—';
+  setDonut('whiteDonut', 0);
+  setDonut('blackDonut', 0);
+  $('ghStats').innerHTML = '';
+  $('criticalStrip').hidden = true;
   if (S.parsed.moves.length) {
     const open = S.parsed.moves.slice(0, 6).map(m => m.san).join(' ');
     $('openingLabel').textContent = open;
+  }
+}
+
+function setDonut(id, accuracy) {
+  const el = $(id);
+  if (!el) return;
+  const C = 2 * Math.PI * 18;
+  const v = Math.max(0, Math.min(100, accuracy));
+  el.style.strokeDasharray = C.toFixed(1);
+  el.style.strokeDashoffset = (C * (1 - v / 100)).toFixed(1);
+  el.setAttribute('stroke', accuracy >= 90 ? 'var(--green)' : accuracy >= 75 ? 'var(--gold)' : 'var(--red)');
+}
+
+function renderGameStats() {
+  const stats = $('ghStats');
+  if (!S.analyzer) { stats.innerHTML = ''; return; }
+  const sum = S.analyzer.summary();
+  if (!sum) { stats.innerHTML = ''; return; }
+  const order = ['brilliant', 'best', 'excellent', 'good', 'inaccuracy', 'mistake', 'blunder', 'mate'];
+  let html = '';
+  for (const key of order) {
+    const n = (sum.counts.w[key] || 0) + (sum.counts.b[key] || 0);
+    if (!n) continue;
+    const cls = CLASSES[key];
+    html += `<span class="gh-chip" style="--c:${cls.color}" title="${cls.label}"><b>${cls.glyph}</b> ${cls.label} <i>${n}</i></span>`;
+  }
+  const ph = sum.phaseAccuracy;
+  html += `<span class="gh-chip phase" title="Açılış / orta oyun / son oyun doğruluğu (beyaz · siyah)">📊 Açılış %${ph.opening.w.toFixed(0)}/%${ph.opening.b.toFixed(0)} · Orta %${ph.middlegame.w.toFixed(0)}/%${ph.middlegame.b.toFixed(0)} · Son %${ph.endgame.w.toFixed(0)}/%${ph.endgame.b.toFixed(0)}</span>`;
+  stats.innerHTML = html;
+
+  setDonut('whiteDonut', sum.accuracy.w);
+  setDonut('blackDonut', sum.accuracy.b);
+  $('whiteAcc').textContent = '%' + sum.accuracy.w.toFixed(1);
+  $('blackAcc').textContent = '%' + sum.accuracy.b.toFixed(1);
+}
+
+function renderCritical() {
+  const strip = $('criticalStrip');
+  const cards = $('criticalCards');
+  if (!S.analyzer || !S.analyzer.moves.length) { strip.hidden = true; return; }
+  const crit = S.analyzer.moves
+    .filter(m => !m.forced && (m.class === 'blunder' || m.class === 'mistake' || m.class === 'inaccuracy'))
+    .sort((a, b) => b.winLoss - a.winLoss)
+    .slice(0, 6);
+  if (!crit.length) { strip.hidden = true; return; }
+  strip.hidden = false;
+  cards.innerHTML = '';
+  for (const m of crit) {
+    const cls = CLASSES[m.class];
+    const card = document.createElement('button');
+    card.className = 'cs-card';
+    card.style.setProperty('--c', cls.color);
+    const num = Math.ceil((m.ply + 1) / 2) + (m.color === 'w' ? '.' : '...');
+    card.innerHTML = `
+      <span class="cs-num">${num}</span>
+      <span class="cs-san">${escapeHtml(m.san)}</span>
+      <span class="cs-badge">${cls.glyph} ${cls.label}</span>
+      <span class="cs-loss">−${m.winLoss.toFixed(1)} puan</span>
+      <span class="cs-best">en iyi: ${escapeHtml(m.bestSan || '—')}</span>`;
+    card.addEventListener('click', () => { S.explore = null; goToMove(m.ply + 1); switchTab('moves'); });
+    cards.appendChild(card);
   }
 }
 
@@ -217,6 +297,7 @@ function showPosition() {
   S.board.setLastMove(lastMove ? { from: squareName(lastMove.from), to: squareName(lastMove.to) } : null);
   S.board.setLegalTargets([]);
   S.board.selected = null;
+  S.board.clearPromotion();
 
   // Şah karesi
   const chess = S.explore || new Chess(fen);
@@ -285,22 +366,39 @@ function updateMoveInfo(idx) {
   }
   const m = S.analyzer.moves[idx - 1];
   const cls = CLASSES[m.class];
-  const wp = scoreToWinPercent(m.scoreBefore, m.mateBefore);
-  const wpAfter = scoreToWinPercent(m.scoreAfter, m.mateAfter);
+  const delta = (m.scoreAfter - m.scoreBefore);
+  const share = whiteShare(m.scoreBefore || 0);
+  const shareAfter = whiteShare(m.scoreAfter || 0);
+  const mover = m.color === 'w' ? 'Beyaz' : 'Siyah';
+  const verdict = m.class === 'best' || m.class === 'brilliant' || m.class === 'mate'
+    ? `${mover} en iyi hamleyi buldu.`
+    : m.class === 'forced'
+      ? 'Tek yasal hamle — değerlendirmeye girmez.'
+      : `${mover} bu hamlede ${m.winLoss.toFixed(1)} kazanma puanı kaybetti; en iyisi <b>${escapeHtml(m.bestSan || '—')}</b> idi.`;
   card.innerHTML = `
     <div class="mc-head">
       <span class="mc-badge" style="--c:${cls.color}">${cls.glyph} ${cls.label}</span>
-      <span class="mc-acc">doğruluk %${m.accuracy.toFixed(1)}</span>
+      <span class="mc-acc">doğruluk <b>%${m.accuracy.toFixed(1)}</b></span>
     </div>
+    <div class="mc-verdict">${verdict}</div>
     <div class="mc-grid">
-      <div><span class="mc-k">Oynanan</span><span class="mc-v">${m.san}</span></div>
-      <div><span class="mc-k">En iyi</span><span class="mc-v best">${m.bestSan || '—'}</span></div>
+      <div><span class="mc-k">Oynanan</span><span class="mc-v">${escapeHtml(m.san)}</span></div>
+      <div><span class="mc-k">En iyi</span><span class="mc-v best">${escapeHtml(m.bestSan || '—')}</span></div>
       <div><span class="mc-k">Değerlendirme</span><span class="mc-v">${formatScore(m.scoreBefore, m.mateBefore)}</span></div>
       <div><span class="mc-k">Hamle sonrası</span><span class="mc-v">${formatScore(m.scoreAfter, m.mateAfter)}</span></div>
-      <div><span class="mc-k">Kazanma kaybı</span><span class="mc-v loss">-${m.winLoss.toFixed(1)} puan</span></div>
-      <div><span class="mc-k">Derinlik</span><span class="mc-v">${m.depth} (${Math.round((m.nps || 0) / 1000)}k nps)</span></div>
     </div>
-    ${m.pvSan && m.pvSan.length ? `<div class="mc-pv"><span class="mc-k">Devam çizgisi</span><span class="mc-pv-line">${m.pvSan.slice(0, 8).join(' ')}</span></div>` : ''}
+    <div class="mc-evalbar" title="Hamle öncesi → sonrası kazanma olasılığı (beyaz)">
+      <span class="mc-eval-mark" style="left:${share.toFixed(1)}%"></span>
+      <span class="mc-eval-mark after" style="left:${shareAfter.toFixed(1)}%"></span>
+      <span class="mc-eval-fill" style="left:${Math.min(share, shareAfter).toFixed(1)}%;width:${Math.abs(shareAfter - share).toFixed(1)}%"></span>
+    </div>
+    <div class="mc-meta">
+      <span class="${delta < -50 ? 'loss' : delta > 50 ? 'gain' : ''}">${delta >= 0 ? '+' : ''}${(delta / 100).toFixed(2)} piyon</span>
+      <span>·</span><span>derinlik ${m.depth}</span>
+      <span>·</span><span>${Math.round((m.nps || 0) / 1000)}k nps</span>
+      <span>·</span><span>${m.phase === 'opening' ? 'açılış' : m.phase === 'endgame' ? 'son oyun' : 'orta oyun'}</span>
+    </div>
+    ${m.pvSan && m.pvSan.length ? `<div class="mc-pv"><span class="mc-k">Devam çizgisi</span><span class="mc-pv-line">${escapeHtml(m.pvSan.slice(0, 8).join(' '))}</span></div>` : ''}
     ${m.comment ? `<div class="mc-comment">💬 ${escapeHtml(m.comment)}</div>` : ''}
   `;
 }
@@ -324,6 +422,12 @@ function renderMoveList() {
     if (moves[i + 1]) row.appendChild(moveEl(i + 1));
     container.appendChild(row);
   }
+  const refresh = S.analyzer && S.analyzer.moves.length ? refreshMoveListClasses : null;
+  if (refresh) refresh();
+}
+
+function whiteShare(cp) {
+  return 50 + 50 * (2 / (1 + Math.exp(-0.00368208 * cp)) - 1);
 }
 
 function moveEl(ply) {
@@ -331,20 +435,51 @@ function moveEl(ply) {
   const el = document.createElement('button');
   el.className = 'ml-move';
   el.dataset.ply = ply;
-  el.textContent = m.san;
   el.addEventListener('click', () => { S.explore = null; goToMove(ply + 1); });
+  el.appendChild(span('ml-san', m.san));
+
   const analysis = S.analyzer && S.analyzer.moves[ply];
   if (analysis) {
     const cls = CLASSES[analysis.class];
     el.classList.add('cls-' + analysis.class);
-    el.innerHTML = `<span class="ml-san">${m.san}</span><span class="ml-glyph" style="color:${cls.color}" title="${cls.label}">${cls.glyph}</span>`;
+    el.title = `${cls.label} · ${analysis.bestSan ? 'en iyi ' + analysis.bestSan : ''} · kazanma kaybı ${analysis.winLoss.toFixed(1)} puan`;
+    el.appendChild(span('ml-glyph', cls.glyph, `color:${cls.color}`));
+
+    // Değerlendirme çubuğu: merkezden avantajlı tarafa doğru dolar
+    const bar = document.createElement('span');
+    bar.className = 'ml-bar';
+    const share = whiteShare(analysis.scoreBefore || 0);
+    const fill = document.createElement('span');
+    fill.className = 'ml-bar-fill ' + (share >= 50 ? 'white' : 'black');
+    fill.style.width = Math.min(50, Math.abs(share - 50) * 2) + '%';
+    fill.style[share >= 50 ? 'right' : 'left'] = '50%';
+    bar.appendChild(fill);
+    el.appendChild(bar);
+
+    // Doğruluk yüzdesi
+    const acc = span('ml-acc', analysis.forced ? '' : '%' + analysis.accuracy.toFixed(0));
+    acc.style.color = cls.color;
+    el.appendChild(acc);
+  } else {
+    el.title = m.comment || '';
+    el.appendChild(span('ml-spacer'));
   }
   if (m.comment) el.title = m.comment;
   return el;
 }
 
+function span(cls, text, style) {
+  const e = document.createElement('span');
+  e.className = cls;
+  if (text != null) e.textContent = text;
+  if (style) e.setAttribute('style', style);
+  return e;
+}
+
+// Analiz bittikten sonra listeyi barlarla yeniden çiz
 function refreshMoveListClasses() {
   const container = $('moveList');
+  if (!container) return;
   container.innerHTML = '';
   const moves = S.parsed.moves;
   for (let i = 0; i < moves.length; i += 2) {
@@ -422,6 +557,10 @@ function onSquareClick(sq) {
     const from = S.board.selected;
     const mv = chess.moves({ verbose: true }).find(m => m.from === sqIndex(from) && m.to === sqIndex(sq));
     if (mv) {
+      if (mv.isPromo) {
+        S.board.showPromotion(from, sq, chess.turn());
+        return;
+      }
       chess.move({ from, to: sq });
       S.explore = chess;
       S.board.setLastMove({ from, to: sq });
@@ -434,7 +573,8 @@ function onSquareClick(sq) {
 
   if (piece && piece.color === chess.turn()) {
     S.board.selected = sq;
-    const targets = chess.moves({ verbose: true, square: sq }).map(m => squareName(m.to));
+    const targets = chess.moves({ verbose: true, square: sq })
+      .map(m => ({ to: squareName(m.to), capture: !!(m.captured || m.isEP) }));
     S.board.setLegalTargets(targets);
     S.board.render(chess.fen());
   } else {
@@ -519,6 +659,8 @@ async function startAnalysis() {
       refreshAiPane();
       renderCoach();
       renderSummary();
+      renderGameStats();
+      renderCritical();
       S.chart.setData(analyzer.moves);
       showPosition();
       toast('Analiz tamamlandı', 'success');

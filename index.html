@@ -100,29 +100,56 @@
 
     <!-- ============ ANALİZ EKRANI ============ -->
     <section id="reviewView" hidden>
-      <div class="review-grid">
-        <!-- Sol: tahta -->
-        <div class="board-col">
-          <div class="players">
-            <div class="player-row">
-              <span class="p-dot b"></span>
-              <span class="p-name" id="blackName">Siyah</span>
-              <span class="p-rating" id="blackRating"></span>
-              <span class="p-acc" id="blackAcc"></span>
+      <!-- Oyun başlık kartı -->
+      <div class="game-header card" id="gameHeader">
+        <div class="gh-players">
+          <div class="gh-player">
+            <span class="gh-dot w"></span>
+            <div class="gh-info">
+              <span class="gh-name" id="whiteName">Beyaz</span>
+              <span class="gh-rating" id="whiteRating"></span>
             </div>
-            <div class="player-row">
-              <span class="p-dot w"></span>
-              <span class="p-name" id="whiteName">Beyaz</span>
-              <span class="p-rating" id="whiteRating"></span>
-              <span class="p-acc" id="whiteAcc"></span>
+            <div class="gh-acc">
+              <svg viewBox="0 0 44 44" class="donut" aria-hidden="true">
+                <circle class="donut-track" cx="22" cy="22" r="18"></circle>
+                <circle class="donut-val" id="whiteDonut" cx="22" cy="22" r="18"></circle>
+              </svg>
+              <span class="gh-acc-val" id="whiteAcc">—</span>
             </div>
           </div>
 
+          <div class="gh-mid">
+            <span class="gh-result" id="resultLabel">—</span>
+            <span class="gh-meta"><span id="moveCountLabel">0 hamle</span><span class="gh-sep">·</span><span id="openingLabel"></span></span>
+          </div>
+
+          <div class="gh-player right">
+            <div class="gh-acc">
+              <svg viewBox="0 0 44 44" class="donut" aria-hidden="true">
+                <circle class="donut-track" cx="22" cy="22" r="18"></circle>
+                <circle class="donut-val" id="blackDonut" cx="22" cy="22" r="18"></circle>
+              </svg>
+              <span class="gh-acc-val" id="blackAcc">—</span>
+            </div>
+            <div class="gh-info">
+              <span class="gh-name" id="blackName">Siyah</span>
+              <span class="gh-rating" id="blackRating"></span>
+            </div>
+            <span class="gh-dot b"></span>
+          </div>
+        </div>
+        <div class="gh-stats" id="ghStats"></div>
+      </div>
+
+      <div class="review-grid">
+        <!-- Sol: tahta -->
+        <div class="board-col">
           <div class="board-shell">
             <div id="board"></div>
           </div>
 
           <div class="eval-bar-wrap">
+            <span class="eval-side">B</span>
             <div class="eval-bar"><div class="eval-fill" id="evalFill"></div></div>
             <span class="eval-label" id="evalLabel">0.00</span>
           </div>
@@ -130,19 +157,33 @@
           <div class="controls">
             <button class="ctrl-btn" id="startBtn" title="Başa dön (Home)">⏮</button>
             <button class="ctrl-btn" id="prevBtn" title="Önceki hamle (←)">◀</button>
-            <button class="ctrl-btn" id="playBtn" title="Oynat / duraklat (Boşluk)">▶</button>
+            <button class="ctrl-btn primary" id="playBtn" title="Oynat / duraklat (Boşluk)">▶</button>
             <button class="ctrl-btn" id="nextBtn" title="Sonraki hamle (→)">▶</button>
             <button class="ctrl-btn" id="endBtn" title="Sona git (End)">⏭</button>
+            <span class="ctrl-sep"></span>
             <button class="ctrl-btn" id="flipBtn" title="Tahtayı çevir (F)">⇅</button>
+            <button class="ctrl-btn" id="engineMoveBtn" title="Bu konum için motor hamlesi oyna">🤖</button>
+            <button class="ctrl-btn" id="resetExploreBtn" title="Keşif modundan çık (Esc)">↺</button>
             <select id="speedSelect" title="Oynatma hızı">
               <option value="1600">Yavaş</option>
               <option value="900" selected>Normal</option>
               <option value="450">Hızlı</option>
             </select>
-            <button class="ctrl-btn" id="engineMoveBtn" title="Motor hamlesini oyna">🤖</button>
-            <button class="ctrl-btn" id="resetExploreBtn" title="Keşif modundan çık (Esc)">↺</button>
           </div>
           <div class="explore-badge" id="exploreBadge" hidden></div>
+
+          <!-- Seçili hamle kartı -->
+          <div class="panel move-panel">
+            <div class="panel-head">
+              <h3>Seçili hamle</h3>
+              <span class="meta" id="moveLabel">Başlangıç</span>
+            </div>
+            <div class="tab-pane">
+              <div class="move-card" id="moveCard">
+                <div class="card-empty">Bir hamle seçin veya tüm oyunu analiz edin.</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Sağ: analiz -->
@@ -155,7 +196,7 @@
                 <button class="tab-button" data-tab="coach" role="tab" aria-selected="false">Koç notları</button>
                 <button class="tab-button" data-tab="ai" role="tab" aria-selected="false">AI Koç <span class="beta-badge">beta</span></button>
               </div>
-              <span class="meta" id="moveCountLabel">0 hamle</span>
+              <span class="meta" id="moveCountLabel2"></span>
             </div>
 
             <div class="tab-pane" data-pane="moves">
@@ -204,24 +245,13 @@ npx wrangler deploy</pre></li>
             </div>
           </div>
 
-          <div class="panel">
-            <div class="panel-head">
-              <h3>Seçili hamle</h3>
-              <span class="meta" id="moveLabel">Başlangıç</span>
-            </div>
-            <div class="tab-pane">
-              <div class="move-card" id="moveCard">
-                <div class="card-empty">Bir hamle seçin veya tüm oyunu analiz edin.</div>
-              </div>
-            </div>
-          </div>
-
+          <!-- Analiz kontrolleri -->
           <div class="panel">
             <div class="panel-head">
               <h3>Analiz</h3>
-              <span class="meta"><span id="resultLabel"></span> · <span id="openingLabel"></span></span>
+              <span class="meta">Vezir Engine</span>
             </div>
-            <div class="tab-pane" style="display:flex;flex-direction:column;gap:10px">
+            <div class="tab-pane" style="display:flex;flex-direction:column;gap:12px">
               <div class="btn-row">
                 <button class="btn primary" id="analyzeBtn">Tüm oyunu analiz et</button>
                 <button class="btn ghost" id="abortBtn" hidden>Durdur</button>
@@ -244,6 +274,15 @@ npx wrangler deploy</pre></li>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Kritik anlar -->
+      <div class="critical-strip" id="criticalStrip" hidden>
+        <div class="cs-head">
+          <h3>Kritik anlar</h3>
+          <span class="cs-hint">Oyuncunun en çok puan kaybettiği hamleler · tıklayın, tahtada görün</span>
+        </div>
+        <div class="cs-cards" id="criticalCards"></div>
       </div>
     </section>
 

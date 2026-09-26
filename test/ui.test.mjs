@@ -103,6 +103,32 @@ await new Promise(r => setTimeout(r, 30));
 ok($('evalFill').style.width !== w1, 'degerlendirme cubugu hamleyle degisti: ' + w1 + ' -> ' + $('evalFill').style.width);
 ok($('board').querySelectorAll('.piece').length > 0, 'tahta cizildi');
 
+// ---- Hamle listesi barlari / ozet karti / kritik anlar ----
+const bars = $('moveList').querySelectorAll('.ml-bar');
+ok(bars.length > 10, 'hamle listesinde degerlendirme bari: ' + bars.length);
+const accs = $('moveList').querySelectorAll('.ml-acc');
+ok(accs.length > 10 && /%\d+/.test(accs[0].textContent), 'dogruluk yuzdesi gosteriliyor: ' + accs[0].textContent);
+const fill = bars[0].querySelector('.ml-bar-fill');
+ok(fill && /%$/.test(fill.style.width || ''), 'bar dolgusu genisligi ayarli: ' + (fill && fill.style.width));
+
+const donut = $('whiteDonut');
+ok(donut.style.strokeDashoffset !== '' && donut.style.strokeDashoffset !== '113.1', 'beyaz donutu dolduruldu: ' + donut.style.strokeDashoffset);
+ok($('ghStats').querySelectorAll('.gh-chip').length >= 3, 'sinif cipleri: ' + $('ghStats').querySelectorAll('.gh-chip').length);
+ok($('ghStats').textContent.includes('Açılış'), 'faz ozeti cipinde');
+
+ok($('criticalStrip').hidden === false, 'kritik anlar seridi gorunur');
+const csCards = $('criticalCards').querySelectorAll('.cs-card');
+ok(csCards.length >= 3, 'kritik an kartlari: ' + csCards.length);
+ok(csCards[0].textContent.includes('en iyi:'), 'kritik kartta en iyi hamle onerisi var');
+const firstLoss = csCards[0].textContent.match(/−(\d+\.\d)/);
+ok(firstLoss !== null, 'kritik kartta puan kaybi var: ' + (firstLoss && firstLoss[0]));
+csCards[0].click();
+await new Promise(r => setTimeout(r, 30));
+ok($('reviewView').querySelector('[data-pane="moves"]').hidden === false, 'kritik karta tiklayinca hamle sekmesi acilir');
+ok($('moveCard').textContent.includes('Oynanan'), 'kritik karta tiklayinca hamle karti doluyor');
+ok($('moveCard').querySelector('.mc-verdict') !== null, 'hamle karti yorum cumlesi iceriyor');
+ok($('moveCard').querySelector('.mc-eval-fill') !== null, 'hamle karti degerlendirme cubugu iceriyor');
+
 // ---- Sekmeler ----
 $('reviewView').querySelector('.tab-button[data-tab="chart"]').click();
 ok($('reviewView').querySelector('[data-pane="chart"]').hidden === false, 'grafik sekmesi acildi');
