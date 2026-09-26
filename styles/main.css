@@ -57,62 +57,62 @@
 
 /* ---------- Jetonlar ---------- */
 :root {
-  /* Yüzeyler: hafif soğuk taş grisi — mor/mavi degil */
-  --bg: #0e1116;
-  --surface: #151a21;
-  --surface-2: #1c222b;
-  --surface-3: #232b36;
-  --line: #2b3441;
-  --line-soft: #212832;
+  /* Yüzeyler: sıcak mürekkep taşı — soğuk gri/mor değil */
+  --bg: #14120e;
+  --surface: #1b1813;
+  --surface-2: #241f18;
+  --surface-3: #2d2720;
+  --line: #3a3227;
+  --line-soft: #282219;
 
   /* Metin */
-  --text: #e8ecf2;
-  --text-2: #a7b2c2;
-  --text-3: #8b96a7;
+  --text: #f3eee3;
+  --text-2: #cabfab;
+  --text-3: #a2937c;
 
-  /* Tek karar rengi: petrol */
-  --accent: #14b8a6;
-  --accent-text: #5eead4;
-  --accent-quiet: rgba(20, 184, 166, .12);
-  --on-accent: #04231f;
+  /* Tek karar rengi: pirinç/antik altın */
+  --accent: #c98a2e;
+  --accent-text: #e8b95f;
+  --accent-quiet: rgba(201, 138, 46, .13);
+  --on-accent: #1a1305;
 
-  /* Anlamsal (hamle sınıfları ve durumlar) */
-  --good: #4ade80;
-  --info: #60a5fa;
-  --warn: #fbbf24;
-  --bad: #f87171;
-  --violet: #c084fc;
+  /* Anlamsal */
+  --good: #7fae5e;
+  --info: #6fb3d9;
+  --warn: #d9a52c;
+  --bad: #dd6f66;
+  --violet: #b585d8;
 
-  /* Hamle sınıfı renkleri (koyu zemin için ayarlandı) */
-  --cls-brilliant: #38bdf8;
-  --cls-best: #4ade80;
-  --cls-excellent: #86efac;
-  --cls-good: #cbd5e1;
-  --cls-inaccuracy: #fbbf24;
-  --cls-mistake: #fb923c;
-  --cls-blunder: #f87171;
-  --cls-forced: #8b96a7;
-  --cls-mate: #c084fc;
-  --cls-book: #60a5fa;
+  /* Hamle sınıfı renkleri — elle karıştırılmış, Tailwind varsayılanı değil */
+  --cls-brilliant: #6fb3d9;
+  --cls-best: #7fae5e;
+  --cls-excellent: #a8c47d;
+  --cls-good: #cdc4b0;
+  --cls-inaccuracy: #d9a52c;
+  --cls-mistake: #d2802f;
+  --cls-blunder: #dd6f66;
+  --cls-forced: #a2937c;
+  --cls-mate: #b585d8;
+  --cls-book: #6f9ed6;
 
-  /* Tahta */
-  --board-light: #ece7dd;
-  --board-dark: #6f9179;
-  --board-frame: #10151c;
-  --coord-light: #5d6b5f;
-  --coord-dark: #f2f5f1;
+  /* Tahta: krem + ceviz */
+  --board-light: #efe7d7;
+  --board-dark: #8a6a45;
+  --board-frame: #100e0a;
+  --coord-light: #6b5c44;
+  --coord-dark: #faf6ec;
 
   /* Taşlar */
-  --piece-white: #fbfcfe;
-  --piece-white-2: #dde4ee;
-  --piece-black: #2b3444;
-  --piece-black-2: #1a2130;
-  --piece-stroke: #0a0e14;
+  --piece-white: #fcfaf4;
+  --piece-white-2: #e3dccb;
+  --piece-black: #332c22;
+  --piece-black-2: #1d1811;
+  --piece-stroke: #0c0a07;
 
   /* Grafik */
   --chart-line: var(--accent-text);
-  --chart-white: #eef2f8;
-  --chart-black: #7c8798;
+  --chart-white: #efe9dc;
+  --chart-black: #7d7264;
 
   /* Ölçü ve ritim */
   --r-sm: 7px;
@@ -124,55 +124,55 @@
   --dur: 160ms;
   --ease: cubic-bezier(.22, 1, .36, 1);
   /* Yükseklik yalnızca yüzen katmanlar için; kartlar kenarla ayırdedilir */
-  --float: 0 10px 28px rgba(0, 0, 0, .38);
-  --float-sm: 0 4px 14px rgba(0, 0, 0, .3);
+  --float: 0 10px 28px rgba(0, 0, 0, .4);
+  --float-sm: 0 4px 14px rgba(0, 0, 0, .32);
 }
 
 [data-theme="light"] {
-  --bg: #f4f3ef;
-  --surface: #ffffff;
-  --surface-2: #f0efea;
-  --surface-3: #e5e3dc;
-  --line: #d8d5cc;
-  --line-soft: #e6e3da;
-  --text: #191d24;
-  --text-2: #4d5765;
-  --text-3: #5a6472;
-  --accent: #0d7d72;
-  --accent-text: #0b6a61;
-  --accent-quiet: rgba(13, 125, 114, .09);
-  --on-accent: #ffffff;
-  --good: #15803d;
-  --info: #1d4ed8;
-  --warn: #a16207;
-  --bad: #b91c1c;
-  --violet: #7e22ce;
+  --bg: #f6f3ec;
+  --surface: #fffdf8;
+  --surface-2: #efeade;
+  --surface-3: #e4ddce;
+  --line: #d8d1c0;
+  --line-soft: #e7e1d5;
+  --text: #1f1b14;
+  --text-2: #574f3e;
+  --text-3: #6a6150;
+  --accent: #8a5a12;
+  --accent-text: #6d490d;
+  --accent-quiet: rgba(138, 90, 18, .08);
+  --on-accent: #fffdf8;
+  --good: #3f6b28;
+  --info: #0b5f7d;
+  --warn: #7a5608;
+  --bad: #a52a22;
+  --violet: #6b2fa0;
 
-  /* Hamle sınıfı renkleri (açık zemin için koylaştırılmış) */
-  --cls-brilliant: #0369a1;
-  --cls-best: #15803d;
-  --cls-excellent: #166534;
-  --cls-good: #475569;
-  --cls-inaccuracy: #a16207;
-  --cls-mistake: #c2410c;
-  --cls-blunder: #b91c1c;
-  --cls-forced: #5a6472;
-  --cls-mate: #7e22ce;
-  --cls-book: #1d4ed8;
-  --board-light: #f3efe6;
-  --board-dark: #8aa88f;
-  --board-frame: #ded9cd;
-  --coord-light: #5c6b5e;
+  --cls-brilliant: #0b5f7d;
+  --cls-best: #3f6b28;
+  --cls-excellent: #3f6b24;
+  --cls-good: #5a5344;
+  --cls-inaccuracy: #7a5608;
+  --cls-mistake: #8f440d;
+  --cls-blunder: #a52a22;
+  --cls-forced: #6a6150;
+  --cls-mate: #6b2fa0;
+  --cls-book: #1f5aa8;
+
+  --board-light: #f6f1e5;
+  --board-dark: #9c7c55;
+  --board-frame: #ded7c7;
+  --coord-light: #6b5c44;
   --coord-dark: #ffffff;
   --piece-white: #ffffff;
-  --piece-white-2: #e6eaf1;
-  --piece-black: #333d4f;
-  --piece-black-2: #1d2534;
-  --piece-stroke: #10151d;
-  --chart-white: #1f2937;
-  --chart-black: #94a3b8;
-  --float: 0 10px 26px rgba(25, 29, 36, .14);
-  --float-sm: 0 3px 10px rgba(25, 29, 36, .09);
+  --piece-white-2: #e9e2d2;
+  --piece-black: #3a3126;
+  --piece-black-2: #221c14;
+  --piece-stroke: #14100a;
+  --chart-white: #2a241a;
+  --chart-black: #8d8271;
+  --float: 0 10px 26px rgba(31, 27, 20, .13);
+  --float-sm: 0 3px 10px rgba(31, 27, 20, .09);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -193,7 +193,15 @@ body {
 ::selection { background: var(--accent); color: var(--on-accent); }
 input, textarea, select { caret-color: var(--accent); accent-color: var(--accent); }
 
-#app { max-width: 1320px; margin: 0 auto; padding: 14px 20px 44px; }
+#app { max-width: 1320px; margin: 0 auto; padding: 14px 26px 48px; }
+
+/* Ölçü: gövde metni 68 karakteri geçmesin, kenara yapışmasın */
+.import-head p, .import-flow, .ai-intro, .ai-block p, .ai-moment-body p,
+.coach-opening, .coach-section li, .ai-list li, .mc-verdict, .mc-comment,
+.mc-pv-line, .empty-hint, .card-empty, .ai-muted, .ai-error, .hint,
+.paste-hint, .ai-hint, .cs-hint, .ai-foot, .ai-steps, .si-note, .ri-meta,
+.cl-hint, .progress-text, .gh-meta, .sum-phases div { max-width: 68ch; }
+footer.app-footer p { max-width: 68ch; margin-inline: auto; }
 
 /* ---------- Üst bar ---------- */
 .topbar {
@@ -380,12 +388,12 @@ select { cursor: pointer; }
 
 .board-svg .hl { pointer-events: none; }
 .board-svg .hl.lastmove { fill: rgba(251, 191, 36, .26); }
-.board-svg .hl.selected { fill: rgba(20, 184, 166, .3); }
+.board-svg .hl.selected { fill: rgba(201, 138, 46, .32); }
 .board-svg .hl.check { fill: rgba(248, 113, 113, .5); }
-.board-svg .best-arrow { stroke: var(--accent); stroke-width: 9; stroke-linecap: round; opacity: .85; }
-.board-svg .best-arrow-head { fill: var(--accent); opacity: .92; }
-.board-svg .legal-dot { fill: rgba(20, 184, 166, .45); pointer-events: none; }
-.board-svg .legal-ring { fill: none; stroke: rgba(20, 184, 166, .8); stroke-width: 7; pointer-events: none; }
+.board-svg .best-arrow { stroke: var(--accent-text); stroke-width: 9; stroke-linecap: round; opacity: .85; }
+.board-svg .best-arrow-head { fill: var(--accent-text); opacity: .92; }
+.board-svg .legal-dot { fill: rgba(201, 138, 46, .5); pointer-events: none; }
+.board-svg .legal-ring { fill: none; stroke: var(--accent); stroke-width: 7; pointer-events: none; }
 .board-svg .promo-dim { fill: rgba(8, 12, 18, .55); }
 .board-svg .promo-cell { cursor: pointer; }
 .board-svg .promo-bg { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
@@ -450,7 +458,7 @@ select { cursor: pointer; }
 .ml-move.cls-blunder { background: rgba(248, 113, 113, .14); }
 .ml-move.cls-mistake { background: rgba(251, 146, 60, .12); }
 .ml-move.cls-inaccuracy { background: rgba(251, 191, 36, .1); }
-.ml-move.cls-brilliant, .ml-move.cls-mate { background: rgba(96, 165, 250, .12); }
+.ml-move.cls-brilliant, .ml-move.cls-mate { background: rgba(111, 179, 217, .13); }
 
 /* ---------- Grafik ---------- */
 .chart-wrap { position: relative; }

@@ -15,9 +15,33 @@ let pass = 0, fail = 0;
 function ok(cond, label) { if (cond) pass++; else { fail++; console.error('  x BASARISIZ: ' + label); } }
 
 // ---- Worker taklidi (jsdom Worker desteklemez) ----
+// Stockfish 18 Lite (UCI) birincil motor; yerleşik motor protokolü de yedekte.
 class FakeWorker {
-  constructor() { this.onmessage = null; this.onerror = null; }
+  constructor() { this.onmessage = null; this.onerror = null; this._fen = null; }
+  _emit(line) { if (this.onmessage) this.onmessage({ data: line }); }
   postMessage(msg) {
+    // --- Stockfish UCI protokolü (düz metin komutlar) ---
+    if (typeof msg === 'string') {
+      if (msg === 'uci') {
+        queueMicrotask(() => { this._emit('id name Stockfish 18 Lite'); this._emit('uciok'); });
+        return;
+      }
+      if (msg === 'isready') { queueMicrotask(() => this._emit('readyok')); return; }
+      if (msg.startsWith('position fen ')) { this._fen = msg.slice('position fen '.length); return; }
+      if (msg.startsWith('go ')) {
+        let r;
+        try { r = searchPosition(this._fen, { movetime: 60, maxDepth: 10 }); }
+        catch (e) { queueMicrotask(() => this.onerror({ message: e.message })); return; }
+        queueMicrotask(() => {
+          const pv = (r.pv || []).join(' ');
+          this._emit(`info depth ${r.depth} score cp ${r.score} nodes ${r.nodes} nps ${r.nps} time ${r.timeMs}${pv ? ' pv ' + pv : ''}`);
+          this._emit(`bestmove ${r.best}`);
+        });
+        return;
+      }
+      return;
+    }
+    // --- Yerleşik motor protokolü (yedek) ---
     if (msg.t === 'init') { queueMicrotask(() => this.onmessage({ data: { t: 'ready' } })); return; }
     if (msg.t === 'newgame') { clearTT(); return; }
     if (msg.t === 'go') {

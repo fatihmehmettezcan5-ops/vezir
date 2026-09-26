@@ -23,6 +23,7 @@ API anahtarı veya sunucu gerekmez.
 | **Koç notları** | Kural tabanlı Türkçe rapor: kritik anlar, ilk açılış sapması, kaybedilen kazanma pozisyonları, asılı taşlar, çalışma planı |
 | **Dışa aktarma** | PGN indirme ve Markdown analiz raporu indirme |
 | **Arayüz** | Oyun başlık kartı
+| **Motor** | **Stockfish 18 Lite** (WASM, lite NNUE) birincil; yüklenemezse yerleşik Vezir motoru devreye girer |
 | **Tahta** | Gömülü SVG taş seti (Unicode glif değil — her işletim sisteminde birebir aynı), kare içi koordinatlar, son hamle/şah/seçim vurguları, en iyi hamle oku (ok uçlu), yasal hedef noktaları ve alma halkaları, terfi (piece promotion) seçici, tıklama ile keşif modu |
 
 ---
@@ -118,6 +119,7 @@ npm test
 |---|---|
 | `test/chess.test.mjs` | 54 doğrulama: hamle üretimi, SAN, FEN, rok, terfi, mat/pat, artımlı durum |
 | `test/engine.test.mjs` | 8 doğrulama: arama derinliği/süre, PV, taktik bulma |
+| `test/engine-sf.test.mjs` | 22 doğrulama: WASM depoda, UCI ayrıştırma (cp/mate/mate 0/PV), protokol, yerleşik motora düşme |
 | `test/pgn.test.mjs` | 35 doğrulama: başlıklar, yorum/$NAG, RAV, FEN, hata toparlama, gidiş-dönüş |
 | `test/analysis.test.mjs` | 17 doğrulama: gerçek motorun üzerinden sınıflandırma, doğruluk, açılış tespiti |
 | `test/coach.test.mjs` | 7 doğrulama: bölümler, markdown rapor, istatistikler |
@@ -126,7 +128,7 @@ npm test
 | `test/ui.test.mjs` | 67 doğrulama: jsdom ile tüm arayüz akışı (yükleme → analiz → sekmeler → klavye → keşif modu → tema → indirme) |
 | `test/matpst.test.mjs` | 13.911 konumda artımlı materyal + PST tutarlılığı (1.719 alma, 24 terfi, 12 rok) |
 
-Toplam: **267 doğrulama + 13.911 konum kontrolü, 0 hata.**
+Toplam: **289 doğrulama + 13.911 konum kontrolü, 0 hata.**
 
 `test/divide.mjs` perft dağıtım aracıdır (`python-chess` ile karşılaştırma için).
 
@@ -173,10 +175,12 @@ npx wrangler deploy
 ## Geliştirici notu
 
 Bu proje — satranç kuralları motoru, arama, PGN ayrıştırıcı, açılış veritabanı,
-arayüz ve tüm testler dahil — **Arena.ai Agent Mode** kullanılarak sıfırdan
-yazılmıştır. Hiçbir dış satranç kütüphanesi (chess.js, stockfish.js vb.) veya
-çatı kütüphanesi kullanılmamıştır; tek geliştirme bağımlılığı testlerde kullanılan
-`jsdom`'dur.
+yazılmıştır. Satranç kuralları motoru, PGN ayrıştırıcı, açılış veritabanı ve arayüz sıfırdan
+yazıldı; hiçbir dış satranç kütüphanesi (chess.js vb.) kullanılmadı. Tek dış
+bileşen değerlendirme motorudur: **Stockfish 18 Lite** (nmrugg/stockfish.js
+derlemesi, GPLv3, `js/vendor/` içinde barındırılır). Stockfish yüklenemezse
+(çevrimdışı, eski tarayıcı) uygulama kendi yazdığı motora düşer ve çalışmaya
+devam eder. Tek geliştirme bağımlılığı testlerde kullanılan `jsdom`'dur.
 
 ---
 

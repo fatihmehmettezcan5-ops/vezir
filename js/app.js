@@ -83,6 +83,8 @@ async function init() {
     await S.engine.init();
     $('engineDot').className = 'status-dot ready';
     $('engineStatus').textContent = 'Motor hazır';
+    const label = $('engineLabel');
+    if (label) label.textContent = S.engine.name || 'Motor';
   } catch (e) {
     $('engineDot').className = 'status-dot error';
     $('engineStatus').textContent = 'Motor hatası';
@@ -639,6 +641,8 @@ async function playEngineMove() {
     toast('Motor hatası: ' + e.message, 'error');
   } finally {
     $('engineStatus').textContent = S.engine && S.engine.ready ? 'Motor hazır' : 'Motor hatası';
+  const lbl = $('engineLabel');
+  if (lbl && S.engine && S.engine.name) lbl.textContent = S.engine.name;
   }
 }
 
